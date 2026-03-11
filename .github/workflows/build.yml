@@ -1,0 +1,51 @@
+# CI/CD 工作流配置
+# 在 GitHub Actions 中自动编译 CAD 插件
+
+name: Build CAD Plugin
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v3
+      
+    - name: 设置 .NET 6.0
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '6.0.x'
+        
+    - name: 还原依赖
+      run: dotnet restore
+      
+    - name: 编译
+      run: dotnet build --configuration Release --no-restore
+      
+    - name: 发布
+      run: dotnet publish --configuration Release --no-build --output ./publish
+      
+    - name: 上传构建产物
+      uses: actions/upload-artifact@v3
+      with:
+        name: CadAutomationPlugin
+        path: ./publish/
+        retention-days: 30
+        
+    - name: 创建安装包
+      run: |
+        Compress-Archive -Path ./publish/* -DestinationPath CadAutomationPlugin.zip
+        
+    - name: 上传安装包
+      uses: actions/upload-artifact@v3
+      with:
+        name: CadAutomationPlugin-Installer
+        path: CadAutomationPlugin.zip
+        retention-days: 30

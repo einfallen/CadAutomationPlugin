@@ -1,0 +1,189 @@
+<Window x:Class="CadAutomationPlugin.UI.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="CAD 自动化插件" Height="600" Width="900"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResizeWithGrip">
+    
+    <Window.Resources>
+        <Style TargetType="Button">
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="MinWidth" Value="100"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- 标题 -->
+        <TextBlock Grid.Row="0" Text="🛠️ CAD 自动化插件 v1.0" 
+                   FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
+
+        <!-- 功能选项卡 -->
+        <TabControl Grid.Row="1">
+            <!-- 智能标注 -->
+            <TabItem Header="📏 智能标注">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    
+                    <StackPanel Grid.Row="0" Orientation="Horizontal">
+                        <Button Content="自动标注" Command="{Binding SmartDimensionCommand}"/>
+                        <Button Content="标注孔" Command="{Binding DimensionHolesCommand}"/>
+                        <Button Content="标注倒角" Command="{Binding DimensionChamferCommand}"/>
+                        <Button Content="清除标注" Command="{Binding ClearDimensionsCommand}"/>
+                    </StackPanel>
+
+                    <GroupBox Grid.Row="1" Header="标注设置" Margin="0,10,0,0">
+                        <Grid Margin="5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="标注样式:" Margin="5"/>
+                            <ComboBox Grid.Row="0" Grid.Column="1" 
+                                      SelectedItem="{Binding SelectedDimensionStyle}"
+                                      Margin="5"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="精度:" Margin="5"/>
+                            <ComboBox Grid.Row="1" Grid.Column="1" 
+                                      SelectedValue="{Binding DimensionPrecision}"
+                                      Margin="5">
+                                <ComboBoxItem Content="0.0"/>
+                                <ComboBoxItem Content="0.00"/>
+                                <ComboBoxItem Content="0.000"/>
+                            </ComboBox>
+
+                            <CheckBox Grid.Row="2" Grid.Column="1" 
+                                      Content="自动避免重叠" 
+                                      IsChecked="{Binding AutoAvoidOverlap}"
+                                      Margin="5"/>
+                        </Grid>
+                    </GroupBox>
+                </Grid>
+            </TabItem>
+
+            <!-- BOM 表 -->
+            <TabItem Header="📊 BOM 表">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Orientation="Horizontal">
+                        <Button Content="生成 BOM" Command="{Binding GenerateBOMCommand}"/>
+                        <Button Content="生成 BOM(含重量)" Command="{Binding GenerateBOMWeightCommand}"/>
+                        <Button Content="导入 BOM" Command="{Binding ImportBOMCommand}"/>
+                        <Button Content="导出 Excel" Command="{Binding ExportExcelCommand}"/>
+                    </StackPanel>
+
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding BOMItems}" 
+                              AutoGenerateColumns="False" 
+                              CanUserAddRows="False"
+                              Margin="0,10,0,0">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="序号" Binding="{Binding Index}" Width="50"/>
+                            <DataGridTextColumn Header="图号" Binding="{Binding PartNumber}" Width="100"/>
+                            <DataGridTextColumn Header="名称" Binding="{Binding Name}" Width="150"/>
+                            <DataGridTextColumn Header="数量" Binding="{Binding Quantity}" Width="60"/>
+                            <DataGridTextColumn Header="材料" Binding="{Binding Material}" Width="80"/>
+                            <DataGridTextColumn Header="单重 (kg)" Binding="{Binding UnitWeight}" Width="80"/>
+                            <DataGridTextColumn Header="总重 (kg)" Binding="{Binding TotalWeight}" Width="80"/>
+                            <DataGridTextColumn Header="备注" Binding="{Binding Remarks}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+
+            <!-- 批量改图 -->
+            <TabItem Header="🔄 批量改图">
+                <Grid Margin="10">
+                    <StackPanel>
+                        <Button Content="分析关联关系" Command="{Binding AnalyzeDependenciesCommand}" 
+                                HorizontalAlignment="Left"/>
+                        <Button Content="执行批量修改" Command="{Binding BatchChangeCommand}" 
+                                HorizontalAlignment="Left"/>
+                        <Button Content="注册关联" Command="{Binding RegisterLinkCommand}" 
+                                HorizontalAlignment="Left"/>
+                        <Button Content="清除关联" Command="{Binding ClearLinksCommand}" 
+                                HorizontalAlignment="Left"/>
+
+                        <TextBlock Text="⚠ 注意：批量改图会影响多个关联零件，请谨慎操作" 
+                                   Foreground="OrangeRed" Margin="0,20,0,0" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <!-- 展开图 -->
+            <TabItem Header="📐 展开图">
+                <Grid Margin="10">
+                    <StackPanel>
+                        <Button Content="生成展开图" Command="{Binding GenerateUnfoldCommand}" 
+                                HorizontalAlignment="Left"/>
+                        <Button Content="批量展开" Command="{Binding BatchUnfoldCommand}" 
+                                HorizontalAlignment="Left"/>
+
+                        <GroupBox Header="展开参数" Margin="0,20,0,0">
+                            <Grid Margin="5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="K 因子:" Margin="5"/>
+                                <TextBox Grid.Row="0" Grid.Column="1" 
+                                         Text="{Binding KFactor}" Margin="5"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="板厚 (mm):" Margin="5"/>
+                                <TextBox Grid.Row="1" Grid.Column="1" 
+                                         Text="{Binding SheetThickness}" Margin="5"/>
+                            </Grid>
+                        </GroupBox>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <!-- 参数化 -->
+            <TabItem Header="⚙️ 参数化">
+                <Grid Margin="10">
+                    <StackPanel>
+                        <Button Content="参数化出图" Command="{Binding GenerateDrawingCommand}" 
+                                HorizontalAlignment="Left"/>
+                        <Button Content="生成工艺文件" Command="{Binding GenerateProcessCommand}" 
+                                HorizontalAlignment="Left"/>
+                        <Button Content="管理模板" Command="{Binding ManageTemplatesCommand}" 
+                                HorizontalAlignment="Left"/>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <!-- 状态栏 -->
+        <StatusBar Grid.Row="2" Margin="0,10,0,0">
+            <StatusBarItem>
+                <TextBlock Text="{Binding StatusMessage}"/>
+            </StatusBarItem>
+            <StatusBarItem HorizontalAlignment="Right">
+                <TextBlock Text="{Binding VersionInfo}"/>
+            </StatusBarItem>
+        </StatusBar>
+    </Grid>
+</Window>

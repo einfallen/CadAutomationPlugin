@@ -1,0 +1,96 @@
+# Azure DevOps 管道配置
+trigger:
+  - main
+  - develop
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+  buildConfiguration: 'Release'
+  dotnetVersion: '6.0.x'
+
+stages:
+- stage: Build
+  displayName: 'Build CAD Plugin'
+  jobs:
+  - job: Build
+    displayName: 'Build on Windows'
+    
+    steps:
+    # 安装 .NET SDK
+    - task: UseDotNet@2
+      displayName: 'Install .NET SDK'
+      inputs:
+        packageType: 'sdk'
+        version: '$(dotnetVersion)'
+        installationPath: $(Agent.ToolsDirectory)/dotnet
+
+    # 还原依赖
+    - script: dotnet restore
+      displayName: 'Restore dependencies'
+
+    # 编译
+    - script: dotnet build --configuration $(buildConfiguration) --no-restore
+      displayName: 'Build project'
+
+    # 运行测试
+    - script: dotnet test --no-restore --verbosity normal
+      displayName: 'Run tests'
+      condition: succeededOrFailed()
+
+    # 发布
+    - script: |
+        dotnet publish --configuration $(buildConfiguration) \
+          --no-build \
+          --output $(Build.ArtifactStagingDirectory) \
+          --self-contained false
+      displayName: 'Publish'
+
+    # 上传构建产物
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish artifacts'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'CadAutomationPlugin'
+        publishLocation: 'Container'
+
+    # 创建 ZIP 包
+    - powershell: |
+        Compress-Archive -Path $(Build.ArtifactStagingDirectory)/* `
+          -DestinationPath $(Build.ArtifactStagingDirectory)/CadAutomationPlugin.zip `
+          -Force
+      displayName: 'Create ZIP package'
+
+    # 上传 ZIP 包
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish ZIP package'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)/CadAutomationPlugin.zip'
+        ArtifactName: 'Installer'
+        publishLocation: 'Container'
+
+- stage: Release
+  displayName: 'Create Release'
+  dependsOn: Build
+  condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
+  jobs:
+  - deployment: Deploy
+    displayName: 'Deploy Release'
+    environment: 'Production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: Installer
+          
+          - task: GitHubRelease@1
+            displayName: 'Create GitHub Release'
+            inputs:
+              gitHubConnection: 'github'
+              repositoryName: '$(Build.Repository.Name)'
+              action: 'create'
+              target: '$(Build.SourceVersion)'
+              tagSource: 'gitTag'
+              assets: '$(Pipeline.Workspace)/Installer/CadAutomationPlugin.zip'
