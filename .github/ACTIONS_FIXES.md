@@ -135,7 +135,36 @@ Please update all occurrences of the CodeQL Action in your workflow files to v4.
 
 ### 2026-03-12 最新修复
 
-#### 问题 1: CoreStubs.cs/UIStubs.cs 条件评估时机错误
+#### 问题 1: CLOUD_BUILD 常量未正确定义
+
+**错误**: 
+```
+The type or namespace name 'BOMData' could not be found
+```
+
+**原因**: 
+- `Directory.Build.props` 检查 `$(GITHUB_ACTIONS)` 来检测云编译
+- 但 MSBuild 可能无法正确读取环境变量
+- 导致 `CLOUD_BUILD` 常量没有被定义
+
+**解决方案**: 
+- 在所有 `dotnet` 命令中显式传递 `-p:CloudBuild=true`
+- 这确保属性被设置，不依赖环境变量检测
+
+**更新的命令**:
+```yaml
+dotnet restore -p:CloudBuild=true
+dotnet build -p:CloudBuild=true
+dotnet test -p:CloudBuild=true
+dotnet publish -p:CloudBuild=true
+```
+
+**修复的文件**:
+- `.github/workflows/build.yml` - 添加 `-p:CloudBuild=true` 到所有 dotnet 命令
+
+---
+
+#### 问题 2: CoreStubs.cs/UIStubs.cs 条件评估时机错误
 
 **错误**: 
 ```
