@@ -135,7 +135,46 @@ Please update all occurrences of the CodeQL Action in your workflow files to v4.
 
 ### 2026-03-12 最新修复
 
-#### 问题 1: CloudBuildStubs.cs 被 #if 包裹导致内容为空
+#### 问题 1: Duplicate 'Compile' items - CloudBuildStubs.cs 重复包含
+
+**错误**: 
+```
+Duplicate 'Compile' items were included. The .NET SDK includes 'Compile' items from your project directory by default.
+The duplicate items were: 'CloudBuildStubs.cs'
+```
+
+**原因**: 
+- .NET SDK 默认会自动包含项目目录中的所有 `.cs` 文件
+- `Shared.csproj` 又显式用 `<Compile Include="CloudBuildStubs.cs" />` 包含了一次
+- 导致文件被包含两次
+
+**解决方案**: 
+- 移除显式的 `<Compile Include>`
+- 只保留 `<Compile Remove>` 用于本地编译时排除
+
+**修复前** (错误):
+```xml
+<ItemGroup Condition="'$(CloudBuild)' == 'true'">
+  <Compile Include="CloudBuildStubs.cs" />
+</ItemGroup>
+<ItemGroup Condition="'$(CloudBuild)' != 'true'">
+  <Compile Remove="CloudBuildStubs.cs" />
+</ItemGroup>
+```
+
+**修复后** (正确):
+```xml
+<ItemGroup Condition="'$(CloudBuild)' != 'true'">
+  <Compile Remove="CloudBuildStubs.cs" />
+</ItemGroup>
+```
+
+**修复的文件**:
+- `src/Shared/Shared.csproj` - 移除重复的 Include
+
+---
+
+#### 问题 2: CloudBuildStubs.cs 被 #if 包裹导致内容为空
 
 **错误**: 
 ```
