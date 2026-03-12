@@ -1,3 +1,4 @@
+#if !CLOUD_BUILD
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CadAutomationPlugin.Core.BOM;
@@ -167,3 +168,4 @@ namespace CadAutomationPlugin.UI.ViewModels
         }
     }
 }
+#endif

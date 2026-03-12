@@ -31,4 +31,9 @@
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.0" />
   </ItemGroup>
+
+  <!-- 云编译存根文件 - 本地编译时移除 -->
+  <ItemGroup Condition="'$(CloudBuild)' != 'true'">
+    <Compile Remove="UIStubs.cs" />
+  </ItemGroup>
 </Project>
