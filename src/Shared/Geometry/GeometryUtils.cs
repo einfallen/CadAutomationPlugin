@@ -1,32 +1,24 @@
-#if !CLOUD_BUILD
+// 云编译时，CloudBuildStubs.cs 会提供 Autodesk.AutoCAD.Geometry 命名空间
 using Autodesk.AutoCAD.Geometry;
-#endif
 
 namespace Shared.Geometry
 {
-#if !CLOUD_BUILD
     /// <summary>
     /// 几何工具类
     /// </summary>
     public static class GeometryUtils
-#else
-    /// <summary>
-    /// 几何工具类（云编译存根）
-    /// </summary>
-    public static class GeometryUtils
-#endif
     {
-#if !CLOUD_BUILD
         /// <summary>
-        /// 计算两点距离
+        /// 计算两点距离（仅本地编译）
         /// </summary>
+#if !CLOUD_BUILD
         public static double Distance(Point3d p1, Point3d p2)
         {
             return p1.GetDistanceTo(p2);
         }
 
         /// <summary>
-        /// 计算中点
+        /// 计算中点（仅本地编译）
         /// </summary>
         public static Point3d MidPoint(Point3d p1, Point3d p2)
         {
@@ -37,7 +29,7 @@ namespace Shared.Geometry
         }
 
         /// <summary>
-        /// 向量点积
+        /// 向量点积（仅本地编译）
         /// </summary>
         public static double DotProduct(Vector3d v1, Vector3d v2)
         {
@@ -45,7 +37,7 @@ namespace Shared.Geometry
         }
 
         /// <summary>
-        /// 向量叉积
+        /// 向量叉积（仅本地编译）
         /// </summary>
         public static Vector3d CrossProduct(Vector3d v1, Vector3d v2)
         {
