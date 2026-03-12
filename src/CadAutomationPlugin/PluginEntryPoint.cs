@@ -1,3 +1,4 @@
+#if !CLOUD_BUILD
 using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.EditorInput;
@@ -152,3 +153,10 @@ namespace CadAutomationPlugin
         }
     }
 }
+#else
+// 云编译存根 - 跳过 AutoCAD 插件入口点
+namespace CadAutomationPlugin
+{
+    public class PluginEntryPointStub { }
+}
+#endif

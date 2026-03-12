@@ -1,3 +1,4 @@
+#if !CLOUD_BUILD
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.EditorInput;
 using CadAutomationPlugin.Core.Unfold;
@@ -107,3 +108,5 @@ namespace CadAutomationPlugin.Commands
         }
     }
 }
+
+#endif

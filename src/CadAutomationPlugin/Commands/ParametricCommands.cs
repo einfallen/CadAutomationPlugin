@@ -1,3 +1,4 @@
+#if !CLOUD_BUILD
 using Autodesk.AutoCAD.ApplicationServices;
 using CadAutomationPlugin.Core.Parametric;
 using Shared.Logging;
@@ -98,3 +99,5 @@ namespace CadAutomationPlugin.Commands
         }
     }
 }
+
+#endif

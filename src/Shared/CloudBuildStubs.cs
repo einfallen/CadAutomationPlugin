@@ -51,6 +51,16 @@ namespace Autodesk.AutoCAD.Runtime
     {
         public CommandMethodAttribute(string name) { }
     }
+    
+    public sealed class CommandAttribute : System.Attribute
+    {
+        public CommandAttribute(params string[] names) { }
+    }
+    
+    public sealed class ExtensionApplicationAttribute : System.Attribute
+    {
+        public ExtensionApplicationAttribute(Type type) { }
+    }
 }
 
 namespace Autodesk.AutoCAD.ApplicationServices

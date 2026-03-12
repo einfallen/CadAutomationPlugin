@@ -23,6 +23,12 @@
     </Reference>
   </ItemGroup>
 
+  <!-- 云编译时排除 XAML 文件和 AutoCAD 相关代码 -->
+  <ItemGroup Condition="'$(CloudBuild)' == 'true'">
+    <Page Remove="Views\MainWindow.xaml" />
+    <Compile Remove="Views\MainWindow.xaml.cs" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Core\Core.csproj" />
     <ProjectReference Include="..\Shared\Shared.csproj" />

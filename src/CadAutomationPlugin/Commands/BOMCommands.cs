@@ -1,3 +1,4 @@
+#if !CLOUD_BUILD
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.DatabaseServices;
@@ -151,3 +152,5 @@ namespace CadAutomationPlugin.Commands
         }
     }
 }
+
+#endif

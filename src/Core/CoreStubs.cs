@@ -6,7 +6,7 @@
 
 namespace CadAutomationPlugin.Core.ChangePropagation
 {
-    public class ChangePropagationEngineStub { }
+    public class ChangePropagationEngine { }
     public class AffectedPart { }
     public class DependencyInfo { }
     public class ChangeParameters { }
@@ -14,7 +14,7 @@ namespace CadAutomationPlugin.Core.ChangePropagation
 
 namespace CadAutomationPlugin.Core.Parametric
 {
-    public class ParametricDrawingGeneratorStub { }
+    public class ParametricDrawingGenerator { }
     public class ParametricParameters { }
     public class ProcessParameters { }
     public class Parameter { }
@@ -24,8 +24,13 @@ namespace CadAutomationPlugin.Core.Parametric
 
 namespace CadAutomationPlugin.Core.SmartDimension
 {
-    public class SmartDimensionEngineStub { }
+    public class SmartDimensionEngine { }
     public class DimensionConfig { }
+}
+
+namespace CadAutomationPlugin.Core.BOM
+{
+    public class BOMGenerator { }
 }
 
 #endif
