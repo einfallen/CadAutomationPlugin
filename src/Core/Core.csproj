@@ -6,22 +6,20 @@
     <LangVersion>10.0</LangVersion>
   </PropertyGroup>
 
-  <ItemGroup>
-    <!-- AutoCAD .NET API References - 仅本地编译时包含 -->
-    <ItemGroup Condition="'$(CloudBuild)' != 'true'">
-      <Reference Include="AcMgd">
-        <HintPath>$(AutoCADPath)\AcMgd.dll</HintPath>
-        <Private>false</Private>
-      </Reference>
-      <Reference Include="AcDbMgd">
-        <HintPath>$(AutoCADPath)\AcDbMgd.dll</HintPath>
-        <Private>false</Private>
-      </Reference>
-      <Reference Include="AcCoreMgd">
-        <HintPath>$(AutoCADPath)\AcCoreMgd.dll</HintPath>
-        <Private>false</Private>
-      </Reference>
-    </ItemGroup>
+  <!-- AutoCAD .NET API References - 仅本地编译时包含 -->
+  <ItemGroup Condition="'$(CloudBuild)' != 'true'">
+    <Reference Include="AcMgd">
+      <HintPath>$(AutoCADPath)\AcMgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="AcDbMgd">
+      <HintPath>$(AutoCADPath)\AcDbMgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="AcCoreMgd">
+      <HintPath>$(AutoCADPath)\AcCoreMgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>
