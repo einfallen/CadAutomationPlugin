@@ -21,10 +21,10 @@ jobs:
     
     steps:
     - name: 检出代码
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       
     - name: 设置 .NET 6.0
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
         
@@ -76,7 +76,7 @@ jobs:
         CLOUD_BUILD: true
       
     - name: 上传代码分析结果
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@v3
       if: always()
       with:
         sarif_file: results.sarif
@@ -94,7 +94,7 @@ jobs:
         Get-ChildItem -Path ./publish -Recurse -File | Select-Object FullName, Length | Format-Table
       
     - name: 上传构建产物 (DLL)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: CadAutomationPlugin-DLLs
         path: ./publish/
@@ -107,7 +107,7 @@ jobs:
         Write-Host "创建安装包完成：CadAutomationPlugin.zip"
         
     - name: 上传安装包
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: CadAutomationPlugin-Installer
         path: CadAutomationPlugin.zip
@@ -121,10 +121,10 @@ jobs:
     
     steps:
     - name: 检出代码
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       
     - name: 设置 .NET 6.0
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
         
