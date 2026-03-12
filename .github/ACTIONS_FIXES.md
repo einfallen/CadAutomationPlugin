@@ -63,21 +63,39 @@ permissions:
 **错误信息**:
 ```
 Node.js 20 actions are deprecated. The following actions are running on Node.js 20:
-actions/checkout@v4, actions/setup-dotnet@v4, github/codeql-action/upload-sarif@v3.
+actions/checkout@v4, actions/setup-dotnet@v4.
 Actions will be forced to run with Node.js 24 by default starting June 2nd, 2026.
 ```
 
 **原因**:
 - GitHub Actions 将从 Node.js 20 迁移到 Node.js 24
 - 默认切换日期：2026-06-02
+- ⚠️ **重要**: `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` 必须设置在 **job 级别**，不能在全局 `env`
 
 **解决方案**:
-- ✅ **设置环境变量强制使用 Node.js 24**
+- ✅ **在 job 级别设置环境变量**
 
 **修改**:
 ```yaml
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    # ✅ 正确：job 级别
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+    
+    steps:
+    - uses: actions/checkout@v4
+```
+
+```yaml
+# ❌ 错误：全局 env 不会生效
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'  # 使用 Node.js 24
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
 ```
 
 **参考**: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
