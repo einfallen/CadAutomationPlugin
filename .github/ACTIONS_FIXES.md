@@ -135,7 +135,29 @@ Please update all occurrences of the CodeQL Action in your workflow files to v4.
 
 ### 2026-03-12 最新修复
 
-#### 问题 1: BOMData 和 Core 命名空间找不到
+#### 问题 1: CoreStubs.cs 被 #if 包裹导致内容为空
+
+**错误**: 
+```
+The type or namespace name 'BOMData' could not be found
+```
+
+**原因**: 
+- `CoreStubs.cs` 文件被 `#if CLOUD_BUILD` 预处理器指令包裹
+- 但文件已经通过 `Core.csproj` 的条件包含来控制（仅当 `CloudBuild != true` 时移除）
+- 双重条件导致文件即使被包含，内容也是空的
+
+**解决方案**: 
+- 移除 `CoreStubs.cs` 中的 `#if CLOUD_BUILD` 包装
+- 文件已经通过 `Core.csproj` 条件控制，不需要额外的 #if
+
+**修复的文件**:
+- `src/Core/CoreStubs.cs` - 移除 #if 包装
+- `src/Core/Core.csproj` - 添加 Compile Remove 条件
+
+---
+
+#### 问题 2: BOMData 和 Core 命名空间找不到
 
 **错误**: 
 ```
