@@ -10,10 +10,16 @@ on:
     branches: [ main ]
   workflow_dispatch:  # 允许手动触发
 
+# 权限配置
+permissions:
+  contents: read
+  security-events: write  # CodeQL 需要
+
 env:
   DOTNET_VERSION: '6.0.x'
   BUILD_CONFIGURATION: 'Release'
   CLOUD_BUILD: 'true'  # 启用云编译模式
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'  # 使用 Node.js 24
 
 jobs:
   build-windows:
@@ -75,13 +81,6 @@ jobs:
       env:
         CLOUD_BUILD: true
       
-    - name: 上传代码分析结果
-      uses: github/codeql-action/upload-sarif@v3
-      if: always()
-      with:
-        sarif_file: results.sarif
-      continue-on-error: true
-      
     - name: 发布
       run: dotnet publish --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --output ./publish
       env:
@@ -113,11 +112,13 @@ jobs:
         path: CadAutomationPlugin.zip
         retention-days: 30
 
-  # 代码质量检查（可选）
+  # 代码质量检查（可选，仅 PR 触发）
   code-analysis:
     runs-on: windows-latest
     needs: build-windows
     if: github.event_name == 'pull_request'
+    permissions:
+      security-events: write
     
     steps:
     - name: 检出代码
