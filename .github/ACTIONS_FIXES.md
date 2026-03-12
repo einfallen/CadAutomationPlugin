@@ -135,7 +135,27 @@ Please update all occurrences of the CodeQL Action in your workflow files to v4.
 
 ### 2026-03-12 最新修复
 
-#### 问题 1: CLOUD_BUILD 常量未正确定义
+#### 问题 1: Data 项目使用 Core.BOM 命名空间导致编译错误
+
+**错误**: 
+```
+The type or namespace name 'BOMData' could not be found
+```
+
+**原因**: 
+- `Data/Excel/ExcelExporter.cs` 使用 `Core.BOM` 命名空间（`BOMData` 类）
+- 云编译时 Core 项目的存根类不可用
+
+**解决方案**: 
+- 为 `ExcelExporter.cs` 添加 `#if !CLOUD_BUILD` 条件编译
+- 添加存根类用于云编译模式
+
+**修复的文件**:
+- `src/Data/Excel/ExcelExporter.cs` - 添加条件编译和存根类
+
+---
+
+#### 问题 2: CLOUD_BUILD 常量未正确定义
 
 **错误**: 
 ```
