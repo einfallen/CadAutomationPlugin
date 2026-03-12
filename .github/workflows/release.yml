@@ -1,0 +1,123 @@
+# 自动 Release 工作流
+# 当创建标签时自动发布新版本
+
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # 匹配 v1.0.0, v2.1.0-beta 等标签
+      - 'release/*'  # 匹配 release/1.0.0 等标签
+
+env:
+  DOTNET_VERSION: '6.0.x'
+  BUILD_CONFIGURATION: 'Release'
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v3
+      
+    - name: 设置 .NET 6.0
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: 准备云编译环境
+      shell: pwsh
+      run: |
+        if (Test-Path "prepare-cloud-build.ps1") {
+          .\prepare-cloud-build.ps1 -SkipAutoCADRefs
+        }
+        
+    - name: 还原依赖
+      run: dotnet restore --verbosity normal
+      
+    - name: 编译
+      run: dotnet build --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore --verbosity normal
+      
+    - name: 运行测试
+      run: dotnet test --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --verbosity normal
+      continue-on-error: true
+      
+    - name: 发布
+      run: dotnet publish --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --output ./publish
+      
+    - name: 创建安装包
+      shell: pwsh
+      run: |
+        # 创建 ZIP 安装包
+        Compress-Archive -Path ./publish/* -DestinationPath CadAutomationPlugin.zip
+        Write-Host "✅ 创建安装包完成：CadAutomationPlugin.zip"
+        
+        # 创建源代码包
+        $sourceExclude = @("*.dll", "*.exe", "*.pdb", "*.zip", "bin/", "obj/", "publish/")
+        Get-ChildItem -Path . -Exclude $sourceExclude -Recurse | 
+          Compress-Archive -DestinationPath CadAutomationPlugin-Source.zip
+        Write-Host "✅ 创建源代码包完成：CadAutomationPlugin-Source.zip"
+        
+    - name: 生成发布说明
+      shell: pwsh
+      id: release_notes
+      run: |
+        # 获取标签名
+        $tagName = "${{ github.ref_name }}"
+        
+        # 获取上次发布版本
+        $lastRelease = gh release view --json tagName -q '.tagName' 2>$null
+        if ($lastRelease) {
+          Write-Host "上次发布：$lastRelease"
+          $changes = gh api repos/{owner}/{repo}/compare/$lastRelease...$tagName -q '.commits | .[] | "* " + .commit.message.split("`n")[0]'
+        } else {
+          Write-Host "首次发布"
+          $changes = "* 初始发布"
+        }
+        
+        # 生成发布说明
+        $notes = @"
+        ## 🎉 $tagName 发布
+        
+        ### 📦 更新内容
+        $changes
+        
+        ### 📥 下载
+        - **CadAutomationPlugin.zip** - 完整安装包（推荐）
+        - **CadAutomationPlugin-Source.zip** - 源代码包
+        
+        ### 📊 构建信息
+        - 构建时间：$(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
+        - .NET 版本：${{ env.DOTNET_VERSION }}
+        - 配置：${{ env.BUILD_CONFIGURATION }}
+        
+        ---
+        *此发布由 GitHub Actions 自动生成*
+        "@
+        
+        # 写入输出文件
+        $notes | Out-File -FilePath release_notes.md -Encoding UTF8
+        Write-Host "✅ 生成发布说明完成"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: 创建 GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        name: Release ${{ github.ref_name }}
+        body_path: release_notes.md
+        files: |
+          CadAutomationPlugin.zip
+          CadAutomationPlugin-Source.zip
+        draft: false
+        prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') || contains(github.ref_name, 'rc') }}
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: 通知发布完成
+      shell: pwsh
+      run: |
+        Write-Host "✅ Release ${{ github.ref_name }} 创建成功！"
+        Write-Host "📦 查看发布：https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}"
