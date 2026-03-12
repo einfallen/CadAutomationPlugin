@@ -85,26 +85,43 @@ namespace Autodesk.AutoCAD.Geometry
 {
     public struct Point3d
     {
+        public double X { get; set; }
+        public double Y { get; set; }
+        public double Z { get; set; }
+        
         public static Point3d Origin => new Point3d();
-        public Point3d(double x, double y, double z) { }
+        public Point3d(double x, double y, double z) { X = x; Y = y; Z = z; }
         public Point3d GetVectorTo(Point3d other) => new Point3d();
+        public double GetDistanceTo(Point3d other) => 0.0;
     }
     
     public struct Vector3d
     {
-        public Vector3d(double x, double y, double z) { }
+        public double X { get; set; }
+        public double Y { get; set; }
+        public double Z { get; set; }
+        
+        public Vector3d(double x, double y, double z) { X = x; Y = y; Z = z; }
         public static Vector3d Zero => new Vector3d();
+        public double Dot(Vector3d other) => 0.0;
+        public Vector3d Cross(Vector3d other) => new Vector3d();
     }
     
     public struct Point2d
     {
+        public double X { get; set; }
+        public double Y { get; set; }
+        
         public static Point2d Origin => new Point2d();
-        public Point2d(double x, double y) { }
+        public Point2d(double x, double y) { X = x; Y = y; }
     }
     
     public struct Vector2d
     {
-        public Vector2d(double x, double y) { }
+        public double X { get; set; }
+        public double Y { get; set; }
+        
+        public Vector2d(double x, double y) { X = x; Y = y; }
         public static Vector2d Zero => new Vector2d();
     }
 }
