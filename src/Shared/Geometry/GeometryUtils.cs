@@ -1,12 +1,22 @@
+#if !CLOUD_BUILD
 using Autodesk.AutoCAD.Geometry;
+#endif
 
 namespace Shared.Geometry
 {
+#if !CLOUD_BUILD
     /// <summary>
     /// 几何工具类
     /// </summary>
     public static class GeometryUtils
+#else
+    /// <summary>
+    /// 几何工具类（云编译存根）
+    /// </summary>
+    public static class GeometryUtilsStub
+#endif
     {
+#if !CLOUD_BUILD
         /// <summary>
         /// 计算两点距离
         /// </summary>
@@ -41,6 +51,7 @@ namespace Shared.Geometry
         {
             return v1.Cross(v2);
         }
+#endif
 
         /// <summary>
         /// 判断点是否在矩形内

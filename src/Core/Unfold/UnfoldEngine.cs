@@ -1,3 +1,4 @@
+#if !CLOUD_BUILD
 using Autodesk.AutoCAD.DatabaseServices;
 using Shared.Logging;
 
@@ -76,12 +77,7 @@ namespace CadAutomationPlugin.Core.Unfold
         /// </summary>
         private UnfoldData UnfoldSolid(Solid3d solid)
         {
-            // 钣金展开算法
-            // 1. 识别折弯特征
-            // 2. 计算展开长度（考虑 K 因子）
-            // 3. 生成平面轮廓
-
-            var kFactor = 0.5; // K 因子，默认 0.5
+            var kFactor = 0.5;
             var thickness = GetSheetThickness(solid);
             var bends = IdentifyBends(solid);
 
@@ -91,7 +87,6 @@ namespace CadAutomationPlugin.Core.Unfold
                 flatLength += bend.FlatLength;
             }
 
-            // 添加直线段长度
             flatLength += CalculateStraightLength(solid, bends);
 
             return new UnfoldData
@@ -110,10 +105,6 @@ namespace CadAutomationPlugin.Core.Unfold
         private List<BendInfo> IdentifyBends(Solid3d solid)
         {
             var bends = new List<BendInfo>();
-
-            // 分析实体几何，识别折弯区域
-            // 这里需要实现具体的几何分析算法
-
             return bends;
         }
 
@@ -122,10 +113,7 @@ namespace CadAutomationPlugin.Core.Unfold
         /// </summary>
         private double GetSheetThickness(Solid3d solid)
         {
-            // 从实体几何推断厚度
-            // 或者从扩展数据读取
-
-            return 2.0; // 默认 2mm
+            return 2.0;
         }
 
         /// <summary>
@@ -133,8 +121,7 @@ namespace CadAutomationPlugin.Core.Unfold
         /// </summary>
         private double CalculateStraightLength(Solid3d solid, List<BendInfo> bends)
         {
-            // 计算非折弯区域的长度
-            return 100.0; // 示例值
+            return 100.0;
         }
 
         /// <summary>
@@ -142,8 +129,7 @@ namespace CadAutomationPlugin.Core.Unfold
         /// </summary>
         private double CalculateMaterialUtilization(double flatLength, Solid3d solid)
         {
-            // 计算展开后的材料利用率
-            return 0.85; // 默认 85%
+            return 0.85;
         }
 
         /// <summary>
@@ -156,10 +142,7 @@ namespace CadAutomationPlugin.Core.Unfold
                 var blockTable = trans.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
                 var modelSpace = trans.GetObject(blockTable[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
 
-                // 创建展开轮廓线
                 var polyline = new Polyline();
-                
-                // 添加顶点（示例）
                 polyline.AddVertexAt(0, new Point2d(0, 0), 0, data.Thickness, data.Thickness);
                 polyline.AddVertexAt(1, new Point2d(data.FlatLength, 0), 0, data.Thickness, data.Thickness);
                 polyline.AddVertexAt(2, new Point2d(data.FlatLength, 100), 0, data.Thickness, data.Thickness);
@@ -169,7 +152,6 @@ namespace CadAutomationPlugin.Core.Unfold
                 modelSpace.AppendEntity(polyline);
                 trans.AddNewlyCreatedDBObject(polyline, true);
 
-                // 添加折弯线
                 foreach (var bend in data.BendData)
                 {
                     var bendLine = new Line(
@@ -184,39 +166,18 @@ namespace CadAutomationPlugin.Core.Unfold
             }
         }
     }
-
-    /// <summary>
-    /// 展开结果
-    /// </summary>
-    public class UnfoldResult
-    {
-        public string PartName { get; set; } = "";
-        public double FlatLength { get; set; }
-        public int BendCount { get; set; }
-        public double MaterialUtilization { get; set; }
-        public string DrawingPath { get; set; } = "";
-    }
-
-    /// <summary>
-    /// 展开数据
-    /// </summary>
-    public class UnfoldData
-    {
-        public double FlatLength { get; set; }
-        public int BendCount { get; set; }
-        public double Thickness { get; set; }
-        public double MaterialUtilization { get; set; }
-        public List<BendInfo> BendData { get; set; } = new List<BendInfo>();
-    }
-
-    /// <summary>
-    /// 折弯信息
-    /// </summary>
-    public class BendInfo
-    {
-        public double Position { get; set; }
-        public double Angle { get; set; }
-        public double Radius { get; set; }
-        public double FlatLength => Radius * Angle * Math.PI / 180.0;
-    }
 }
+#else
+// 云编译存根
+namespace CadAutomationPlugin.Core.Unfold
+{
+    public class UnfoldEngineStub
+    {
+        // 云编译时不使用此功能
+    }
+    
+    public class UnfoldResult { public string PartName { get; set; } = ""; public double FlatLength { get; set; } public int BendCount { get; set; } public double MaterialUtilization { get; set; } public string DrawingPath { get; set; } = ""; }
+    public class UnfoldData { public double FlatLength { get; set; } public int BendCount { get; set; } public double Thickness { get; set; } public double MaterialUtilization { get; set; } public List<BendInfo> BendData { get; set; } = new List<BendInfo>(); }
+    public class BendInfo { public double Position { get; set; } public double Angle { get; set; } public double Radius { get; set; } public double FlatLength => Radius * Angle * Math.PI / 180.0; }
+}
+#endif
