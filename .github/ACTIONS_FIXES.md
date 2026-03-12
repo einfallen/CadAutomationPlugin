@@ -135,7 +135,36 @@ Please update all occurrences of the CodeQL Action in your workflow files to v4.
 
 ### 2026-03-12 最新修复
 
-#### 问题 1: UI 项目使用 Core/AutoCAD 命名空间导致编译错误
+#### 问题 1: CoreStubs.cs/UIStubs.cs 条件评估时机错误
+
+**错误**: 
+```
+The type or namespace name 'BOMData' could not be found
+```
+
+**原因**: 
+- `.csproj` 使用 `<Compile Remove>` 当 `CloudBuild != true`
+- 但 `CloudBuild` 属性在 `Directory.Build.props` 中设置，**晚于**项目评估
+- 导致条件判断错误，存根文件在云编译时也被排除了
+
+**解决方案**: 
+- 恢复使用 `#if CLOUD_BUILD` 在存根文件内部
+- 移除 `.csproj` 中的 `Compile Remove` 条件
+- 让文件始终被包含，内容通过 `#if CLOUD_BUILD` 控制
+
+**修复的逻辑**:
+- 云编译：文件被包含 **且** 内容激活（`#if CLOUD_BUILD`）
+- 本地编译：文件被包含 **但** 内容跳过（`#if CLOUD_BUILD`）
+
+**修复的文件**:
+- `src/Core/CoreStubs.cs` - 重新添加 `#if CLOUD_BUILD` 包装
+- `src/UI/UIStubs.cs` - 重新添加 `#if CLOUD_BUILD` 包装
+- `src/Core/Core.csproj` - 移除 Compile Remove 条件
+- `src/UI/UI.csproj` - 移除 Compile Remove 条件
+
+---
+
+#### 问题 2: UI 项目使用 Core/AutoCAD 命名空间导致编译错误
 
 **错误**: 
 ```
