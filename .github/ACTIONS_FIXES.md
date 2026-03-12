@@ -135,7 +135,33 @@ Please update all occurrences of the CodeQL Action in your workflow files to v4.
 
 ### 2026-03-12 最新修复
 
-#### 问题 1: Point2d/Vector2d 缺少 X/Y 属性
+#### 问题 1: BOMData 和 Core 命名空间找不到
+
+**错误**: 
+```
+The type or namespace name 'BOMData' could not be found
+The type or namespace name 'Core' does not exist in the namespace 'CadAutomationPlugin'
+```
+
+**原因**: 
+- Core 项目中的文件（BOMGenerator.cs, ChangePropagationEngine.cs 等）使用 AutoCAD 命名空间
+- 没有条件编译，导致云编译时失败
+- 云编译时这些文件被跳过，但它们的公共类（如 BOMData）被其他文件引用
+
+**解决方案**: 
+1. 为所有 AutoCAD 依赖的 Core 文件添加 `#if !CLOUD_BUILD`
+2. 创建 `CoreStubs.cs` 提供云编译时的存根类
+
+**修复的文件**:
+- `src/Core/BOM/BOMGenerator.cs` - 添加条件编译
+- `src/Core/ChangePropagation/ChangePropagationEngine.cs` - 添加条件编译
+- `src/Core/Parametric/ParametricDrawingGenerator.cs` - 添加条件编译
+- `src/Core/SmartDimension/SmartDimensionEngine.cs` - 添加条件编译
+- `src/Core/CoreStubs.cs` - 新增（云编译存根）
+
+---
+
+#### 问题 2: Point2d/Vector2d 缺少 X/Y 属性
 
 **错误**: 
 ```
