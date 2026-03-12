@@ -135,7 +135,31 @@ Please update all occurrences of the CodeQL Action in your workflow files to v4.
 
 ### 2026-03-12 最新修复
 
-#### 问题 1: Directory.Build.props CloudBuild 属性检测时机错误
+#### 问题 1: UI 项目使用 Core/AutoCAD 命名空间导致编译错误
+
+**错误**: 
+```
+The type or namespace name 'BOMData' could not be found
+The type or namespace name 'Core' does not exist in the namespace 'CadAutomationPlugin'
+```
+
+**原因**: 
+- UI 项目中的文件（如 MainViewModel.cs）使用 `CadAutomationPlugin.Core.BOM` 和 AutoCAD 命名空间
+- 云编译时这些命名空间不可用
+
+**解决方案**: 
+1. 为 UI 项目中使用 AutoCAD/Core 的文件添加 `#if !CLOUD_BUILD`
+2. 创建 `UIStubs.cs` 提供云编译时的存根类
+3. 更新 `UI.csproj` 在本地编译时移除存根文件
+
+**修复的文件**:
+- `src/UI/ViewModels/MainViewModel.cs` - 添加条件编译
+- `src/UI/UIStubs.cs` - 新增（云编译存根）
+- `src/UI/UI.csproj` - 添加 Compile Remove 条件
+
+---
+
+#### 问题 2: Directory.Build.props CloudBuild 属性检测时机错误
 
 **错误**: 
 ```
