@@ -135,7 +135,35 @@ Please update all occurrences of the CodeQL Action in your workflow files to v4.
 
 ### 2026-03-12 最新修复
 
-#### 问题 1: Duplicate 'Compile' items - CloudBuildStubs.cs 重复包含
+#### 问题 1: CloudBuildStubs.cs 在云编译时未被包含
+
+**错误**: 
+```
+The type or namespace name 'Point2d' could not be found
+```
+
+**原因**: 
+- `Shared.csproj` 使用 `<Compile Remove>` 当 `CloudBuild != true`
+- 但 `CloudBuild` 属性在 `Directory.Build.props` 中设置，**晚于**项目评估
+- 导致条件判断错误，文件在云编译时也被排除了
+
+**解决方案**: 简化策略
+1. 移除 `Shared.csproj` 中的所有 `Compile Include/Remove` 条件
+2. 让 .NET SDK 默认包含所有 `.cs` 文件
+3. 在 `CloudBuildStubs.cs` 文件内部使用 `#if CLOUD_BUILD`
+4. `Directory.Build.props` 在 `GITHUB_ACTIONS=true` 时定义 `CLOUD_BUILD` 常量
+
+**修复的逻辑**:
+- 云编译：`CloudBuildStubs.cs` 被包含 **且** 内容激活（`#if CLOUD_BUILD`）
+- 本地编译：`CloudBuildStubs.cs` 被包含 **但** 内容跳过（`#if CLOUD_BUILD`）
+
+**修复的文件**:
+- `src/Shared/Shared.csproj` - 简化，移除所有条件
+- `src/Shared/CloudBuildStubs.cs` - 重新添加 `#if CLOUD_BUILD` 包装
+
+---
+
+#### 问题 2: Duplicate 'Compile' items - CloudBuildStubs.cs 重复包含
 
 **错误**: 
 ```
