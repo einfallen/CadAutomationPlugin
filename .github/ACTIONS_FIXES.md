@@ -135,7 +135,30 @@ Please update all occurrences of the CodeQL Action in your workflow files to v4.
 
 ### 2026-03-12 最新修复
 
-#### 问题 1: GeometryUtils.cs 缺少 Point2d/Vector2d 命名空间
+#### 问题 1: Point2d/Vector2d 缺少 X/Y 属性
+
+**错误**: 
+```
+'Point2d' does not contain a definition for 'X' and no accessible extension method 'X' accepting a first argument of type 'Point2d' could be found
+'Point2d' does not contain a definition for 'Y' ...
+```
+
+**原因**: 
+- `CloudBuildStubs.cs` 中的 `Point2d` 和 `Vector2d` 结构体只定义了构造函数
+- 没有定义 `X` 和 `Y` 公共属性
+- `GeometryUtils.cs` 中使用了 `point.X` 和 `point.Y`
+
+**解决方案**: 
+- 为 `Point2d` 添加 `public double X { get; set; }` 和 `public double Y { get; set; }`
+- 为 `Vector2d` 添加 `public double X { get; set; }` 和 `public double Y { get; set; }`
+- 为 `Point3d` 和 `Vector3d` 也添加 `X/Y/Z` 属性（完整性）
+
+**修复的文件**:
+- `src/Shared/CloudBuildStubs.cs` - 添加 X/Y/Z 属性
+
+---
+
+#### 问题 2: GeometryUtils.cs 缺少 Point2d/Vector2d 命名空间
 
 **错误**: 
 ```
