@@ -135,7 +135,33 @@ Please update all occurrences of the CodeQL Action in your workflow files to v4.
 
 ### 2026-03-12 最新修复
 
-#### 问题 1: MSB4232 - ItemGroup 嵌套错误
+#### 问题 1: Point2d/Vector2d 类型找不到
+
+**错误**: 
+```
+The type or namespace name 'Point2d' could not be found
+The type or namespace name 'Vector2d' could not be found
+Cannot declare a variable of static type 'LogManager'
+```
+
+**原因**: 
+- CloudBuildStubs.cs 缺少 Point2d/Vector2d 定义
+- LogManager 使用了 NLog.LogManager 字段导致命名冲突
+
+**解决方案**: 
+1. 添加 Point2d/Vector2d 到 CloudBuildStubs.cs
+2. 修复 LogManager - 移除 NLog.LogManager 字段，添加 ConsoleLogger
+3. 为 GeometryUtils.cs 和 UnfoldEngine.cs 添加条件编译
+
+**修复的文件**:
+- `src/Shared/CloudBuildStubs.cs` - 添加 Point2d, Vector2d, 更多实体类
+- `src/Shared/Logging/LogManager.cs` - 修复命名冲突，添加云编译支持
+- `src/Shared/Geometry/GeometryUtils.cs` - 添加 #if !CLOUD_BUILD
+- `src/Core/Unfold/UnfoldEngine.cs` - 添加 #if !CLOUD_BUILD
+
+---
+
+#### 问题 2: MSB4232 - ItemGroup 嵌套错误
 
 **错误**: 
 ```
