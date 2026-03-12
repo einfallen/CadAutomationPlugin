@@ -7,17 +7,31 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- AutoCAD .NET API References -->
-    <Reference Include="AcMgd">
+    <!-- AutoCAD .NET API References - 本地编译 -->
+    <Reference Include="AcMgd" Condition="'$(CloudBuild)' != 'true'">
       <HintPath>$(AutoCADPath)\AcMgd.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <Reference Include="AcDbMgd">
+    <Reference Include="AcDbMgd" Condition="'$(CloudBuild)' != 'true'">
       <HintPath>$(AutoCADPath)\AcDbMgd.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <Reference Include="AcCoreMgd">
+    <Reference Include="AcCoreMgd" Condition="'$(CloudBuild)' != 'true'">
       <HintPath>$(AutoCADPath)\AcCoreMgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    
+    <!-- AutoCAD .NET API References - 云编译使用 refs 目录 -->
+    <Reference Include="AcMgd" Condition="'$(CloudBuild)' == 'true'">
+      <HintPath>..\..\refs\AcMgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="AcDbMgd" Condition="'$(CloudBuild)' == 'true'">
+      <HintPath>..\..\refs\AcDbMgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="AcCoreMgd" Condition="'$(CloudBuild)' == 'true'">
+      <HintPath>..\..\refs\AcCoreMgd.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>

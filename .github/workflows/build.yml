@@ -10,6 +10,10 @@ on:
     branches: [ main ]
   workflow_dispatch:  # 允许手动触发
 
+env:
+  DOTNET_VERSION: '6.0.x'
+  BUILD_CONFIGURATION: 'Release'
+
 jobs:
   build-windows:
     runs-on: windows-latest
@@ -21,27 +25,54 @@ jobs:
     - name: 设置 .NET 6.0
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: '6.0.x'
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: 准备云编译环境
+      shell: pwsh
+      run: |
+        # 运行准备脚本（会自动处理缺失的 AutoCAD 引用）
+        if (Test-Path "prepare-cloud-build.ps1") {
+          .\prepare-cloud-build.ps1 -SkipAutoCADRefs
+        }
+        
+    - name: 显示构建信息
+      run: |
+        echo "=== 构建环境 ==="
+        dotnet --version
+        echo "配置：${{ env.BUILD_CONFIGURATION }}"
+        echo "云编译：$env:GITHUB_ACTIONS"
         
     - name: 还原依赖
-      run: dotnet restore
+      run: dotnet restore --verbosity normal
       
     - name: 编译
-      run: dotnet build --configuration Release --no-restore
+      run: dotnet build --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore --verbosity normal
+      
+    - name: 运行测试
+      run: dotnet test --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --verbosity normal
+      continue-on-error: true  # 测试失败不阻塞构建
       
     - name: 发布
-      run: dotnet publish --configuration Release --no-build --output ./publish
+      run: dotnet publish --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --output ./publish
       
-    - name: 上传构建产物
+    - name: 查看发布内容
+      shell: pwsh
+      run: |
+        Write-Host "=== 发布内容 ==="
+        Get-ChildItem -Path ./publish -Recurse -File | Select-Object FullName, Length | Format-Table
+      
+    - name: 上传构建产物 (DLL)
       uses: actions/upload-artifact@v3
       with:
-        name: CadAutomationPlugin
+        name: CadAutomationPlugin-DLLs
         path: ./publish/
         retention-days: 30
         
     - name: 创建安装包
+      shell: pwsh
       run: |
         Compress-Archive -Path ./publish/* -DestinationPath CadAutomationPlugin.zip
+        Write-Host "创建安装包完成：CadAutomationPlugin.zip"
         
     - name: 上传安装包
       uses: actions/upload-artifact@v3
@@ -49,3 +80,25 @@ jobs:
         name: CadAutomationPlugin-Installer
         path: CadAutomationPlugin.zip
         retention-days: 30
+
+  # 代码质量检查（可选）
+  code-analysis:
+    runs-on: windows-latest
+    needs: build-windows
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v3
+      
+    - name: 设置 .NET 6.0
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: 还原依赖
+      run: dotnet restore
+      
+    - name: 代码分析
+      run: dotnet build /p:RunAnalyzersDuringBuild=true /warnaserror
+      continue-on-error: true

@@ -1,0 +1,61 @@
+# Build results
+[Dd]ebug/
+[Dd]ebug Public/
+[Rr]elease/
+[Rr]elease Public/
+[Rr]eelase/
+bin/
+obj/
+[Bb]uild/
+[Bb]uildLog/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# AutoCAD plugin output
+*.bundle/
+*.dll
+*.exe
+
+# Test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Dd]efinitions*/
+
+# NuGet Packages
+*.nupkg
+*.snupkg
+**/packages/*
+!**/packages/build/
+
+# Visual Studio cache
+.vs/
+*.csproj.user
+*.cache
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+
+# Recovery files
+recovery-*.json
+
+# AutoCAD references (proprietary, do not commit)
+refs/*.dll
+refs/.skiprefs
