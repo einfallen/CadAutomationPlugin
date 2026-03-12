@@ -13,17 +13,19 @@ on:
 # 权限配置
 permissions:
   contents: read
-  security-events: write  # CodeQL 需要
+  security-events: write
 
 env:
   DOTNET_VERSION: '6.0.x'
   BUILD_CONFIGURATION: 'Release'
-  CLOUD_BUILD: 'true'  # 启用云编译模式
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'  # 使用 Node.js 24
+  CLOUD_BUILD: 'true'
 
 jobs:
   build-windows:
     runs-on: windows-latest
+    # 使用 Node.js 24
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
     
     steps:
     - name: 检出代码
@@ -38,16 +40,13 @@ jobs:
       shell: pwsh
       run: |
         Write-Host "=== 准备云编译环境 ==="
-        # 设置环境变量
         echo "CLOUD_BUILD=true" >> $env:GITHUB_ENV
         [Environment]::SetEnvironmentVariable("CLOUD_BUILD", "true", "Process")
         
-        # 运行准备脚本
         if (Test-Path "prepare-cloud-build.ps1") {
           .\prepare-cloud-build.ps1 -SkipAutoCADRefs
         }
         
-        # 验证环境变量
         Write-Host "CLOUD_BUILD = $env:CLOUD_BUILD"
         Write-Host "GITHUB_ACTIONS = $env:GITHUB_ACTIONS"
         
@@ -57,34 +56,25 @@ jobs:
         dotnet --version
         echo "配置：${{ env.BUILD_CONFIGURATION }}"
         echo "云编译：$env:CLOUD_BUILD"
-        echo "GitHub Actions: $env:GITHUB_ACTIONS"
         
     - name: 还原依赖
       run: dotnet restore --verbosity normal
       
     - name: 编译
       run: dotnet build --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore --verbosity normal
-      env:
-        CLOUD_BUILD: true
       
     - name: 代码质量检查
       run: |
         echo "=== 运行代码分析器 ==="
         dotnet build /p:RunAnalyzersDuringBuild=true --verbosity normal
       continue-on-error: true
-      env:
-        CLOUD_BUILD: true
       
     - name: 运行测试
       run: dotnet test --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --verbosity normal
-      continue-on-error: true  # 测试失败不阻塞构建
-      env:
-        CLOUD_BUILD: true
+      continue-on-error: true
       
     - name: 发布
       run: dotnet publish --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --output ./publish
-      env:
-        CLOUD_BUILD: true
       
     - name: 查看发布内容
       shell: pwsh
@@ -117,6 +107,8 @@ jobs:
     runs-on: windows-latest
     needs: build-windows
     if: github.event_name == 'pull_request'
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
     permissions:
       security-events: write
     
@@ -135,5 +127,3 @@ jobs:
     - name: 代码分析
       run: dotnet build /p:RunAnalyzersDuringBuild=true /warnaserror
       continue-on-error: true
-      env:
-        CLOUD_BUILD: true

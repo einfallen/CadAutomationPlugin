@@ -6,8 +6,8 @@ name: Create Release
 on:
   push:
     tags:
-      - 'v*'  # 匹配 v1.0.0, v2.1.0-beta 等标签
-      - 'release/*'  # 匹配 release/1.0.0 等标签
+      - 'v*'
+      - 'release/*'
 
 # 权限配置
 permissions:
@@ -17,11 +17,13 @@ permissions:
 env:
   DOTNET_VERSION: '6.0.x'
   BUILD_CONFIGURATION: 'Release'
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'  # 使用 Node.js 24
 
 jobs:
   build-and-release:
     runs-on: windows-latest
+    # 使用 Node.js 24
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
     
     steps:
     - name: 检出代码
@@ -36,16 +38,13 @@ jobs:
       shell: pwsh
       run: |
         Write-Host "=== 准备云编译环境 ==="
-        # 设置环境变量
         echo "CLOUD_BUILD=true" >> $env:GITHUB_ENV
         [Environment]::SetEnvironmentVariable("CLOUD_BUILD", "true", "Process")
         
-        # 运行准备脚本
         if (Test-Path "prepare-cloud-build.ps1") {
           .\prepare-cloud-build.ps1 -SkipAutoCADRefs
         }
         
-        # 验证环境变量
         Write-Host "CLOUD_BUILD = $env:CLOUD_BUILD"
         
     - name: 还原依赖
@@ -64,11 +63,9 @@ jobs:
     - name: 创建安装包
       shell: pwsh
       run: |
-        # 创建 ZIP 安装包
         Compress-Archive -Path ./publish/* -DestinationPath CadAutomationPlugin.zip
         Write-Host "✅ 创建安装包完成：CadAutomationPlugin.zip"
         
-        # 创建源代码包
         $sourceExclude = @("*.dll", "*.exe", "*.pdb", "*.zip", "bin/", "obj/", "publish/")
         Get-ChildItem -Path . -Exclude $sourceExclude -Recurse | 
           Compress-Archive -DestinationPath CadAutomationPlugin-Source.zip
@@ -78,10 +75,8 @@ jobs:
       shell: pwsh
       id: release_notes
       run: |
-        # 获取标签名
         $tagName = "${{ github.ref_name }}"
         
-        # 获取上次发布版本
         $lastRelease = gh release view --json tagName -q '.tagName' 2>$null
         if ($lastRelease) {
           Write-Host "上次发布：$lastRelease"
@@ -91,7 +86,6 @@ jobs:
           $changes = "* 初始发布"
         }
         
-        # 生成发布说明
         $notes = @"
         ## 🎉 $tagName 发布
         
@@ -111,7 +105,6 @@ jobs:
         *此发布由 GitHub Actions 自动生成*
         "@
         
-        # 写入输出文件
         $notes | Out-File -FilePath release_notes.md -Encoding UTF8
         Write-Host "✅ 生成发布说明完成"
       env:
