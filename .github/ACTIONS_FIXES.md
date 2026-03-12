@@ -135,7 +135,29 @@ Please update all occurrences of the CodeQL Action in your workflow files to v4.
 
 ### 2026-03-12 最新修复
 
-#### 问题 1: Point2d/Vector2d 类型找不到
+#### 问题 1: CloudBuildStubs.cs 被 #if 包裹导致内容为空
+
+**错误**: 
+```
+The type or namespace name 'Point2d' could not be found
+```
+
+**原因**: 
+- `CloudBuildStubs.cs` 文件被 `#if CLOUD_BUILD` 包裹
+- 但文件已经通过 Shared.csproj 条件包含（仅当 CloudBuild=true 时）
+- 双重条件导致文件即使被包含，内容也是空的
+
+**解决方案**: 
+- 移除 `CloudBuildStubs.cs` 中的 `#if CLOUD_BUILD` 包装
+- 文件已经通过 Shared.csproj 条件控制，不需要额外的 #if
+
+**修复的文件**:
+- `src/Shared/CloudBuildStubs.cs` - 移除 #if 包装
+- `src/Shared/Shared.csproj` - 条件包含已正确配置
+
+---
+
+#### 问题 2: Point2d/Vector2d 类型找不到
 
 **错误**: 
 ```
