@@ -4,6 +4,48 @@
 
 ---
 
+## 🐛 2026-03-12 最新修复
+
+### 错误：AutoCAD 入口点和命令特性找不到
+
+**错误信息**:
+```
+The type or namespace name 'Command' does not exist in the namespace 'Autodesk.AutoCAD.Runtime'
+The type or namespace name 'ExtensionApplicationAttribute' could not be found
+The type or namespace name 'Forms' does not exist in the namespace 'System.Windows'
+The type or namespace name 'ChangePropagationEngine' could not be found
+The type or namespace name 'BOMGenerator' could not be found
+```
+
+**原因**:
+1. `PluginEntryPoint.cs` 使用 AutoCAD `ExtensionApplication` 特性 - 需要条件编译
+2. `Commands/*.cs` 文件使用 AutoCAD `Command` 特性 - 需要条件编译
+3. `MainWindow.xaml.cs` 使用 WPF `System.Windows` - 需要条件编译
+4. `CoreStubs.cs` 类名错误（带有 Stub 后缀）- 应该与真实类名匹配
+5. `CloudBuildStubs.cs` 缺少 `CommandAttribute` 和 `ExtensionApplicationAttribute`
+
+**解决方案**:
+1. `PluginEntryPoint.cs` - 添加 `#if !CLOUD_BUILD` 包装和存根类
+2. `Commands/*.cs` (5 个文件) - 添加 `#if !CLOUD_BUILD` 包装
+3. `MainWindow.xaml.cs` - 添加 `#if !CLOUD_BUILD` 包装
+4. `UI.csproj` - 添加条件排除 XAML 文件
+5. `CoreStubs.cs` - 修复类名（移除 Stub 后缀）
+6. `CloudBuildStubs.cs` - 添加 `CommandAttribute` 和 `ExtensionApplicationAttribute`
+
+**修改的文件**:
+- `src/CadAutomationPlugin/PluginEntryPoint.cs`
+- `src/CadAutomationPlugin/Commands/BatchChangeCommands.cs`
+- `src/CadAutomationPlugin/Commands/BOMCommands.cs`
+- `src/CadAutomationPlugin/Commands/ParametricCommands.cs`
+- `src/CadAutomationPlugin/Commands/SmartDimensionCommands.cs`
+- `src/CadAutomationPlugin/Commands/UnfoldCommands.cs`
+- `src/UI/Views/MainWindow.xaml.cs`
+- `src/UI/UI.csproj`
+- `src/Core/CoreStubs.cs`
+- `src/Shared/CloudBuildStubs.cs`
+
+---
+
 ## 🐛 2026-03-12 错误修复
 
 ### 错误 1: Path does not exist: results.sarif
