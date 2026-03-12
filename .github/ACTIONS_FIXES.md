@@ -135,7 +135,29 @@ Please update all occurrences of the CodeQL Action in your workflow files to v4.
 
 ### 2026-03-12 最新修复
 
-#### 问题 1: CloudBuildStubs.cs 在云编译时未被包含
+#### 问题 1: GeometryUtils.cs 缺少 Point2d/Vector2d 命名空间
+
+**错误**: 
+```
+The type or namespace name 'Point2d' could not be found
+```
+
+**原因**: 
+- `GeometryUtils.cs` 使用 `#if !CLOUD_BUILD` 包装了 `using Autodesk.AutoCAD.Geometry;`
+- 但 `Point2d`/`Vector2d` 在**始终编译**的方法中使用（如 `IsPointInRect`, `GetBoundingBox`）
+- 云编译时 using 被跳过，导致找不到类型
+
+**解决方案**: 
+- **始终包含** `using Autodesk.AutoCAD.Geometry;`
+- `CloudBuildStubs.cs` 在云编译时提供该命名空间
+- 只用 `#if !CLOUD_BUILD` 包装 AutoCAD 专属方法（`Distance`, `MidPoint`, `DotProduct`, `CrossProduct`）
+
+**修复的文件**:
+- `src/Shared/Geometry/GeometryUtils.cs` - 移除 using 的条件编译
+
+---
+
+#### 问题 2: CloudBuildStubs.cs 在云编译时未被包含
 
 **错误**: 
 ```
