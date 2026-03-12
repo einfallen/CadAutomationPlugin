@@ -135,7 +135,33 @@ Please update all occurrences of the CodeQL Action in your workflow files to v4.
 
 ### 2026-03-12 最新修复
 
-#### 问题 1: Data 项目使用 Core.BOM 命名空间导致编译错误
+#### 问题 1: CoreStubs.cs 重复定义类
+
+**错误**: 
+```
+The namespace 'CadAutomationPlugin.Core.BOM' already contains a definition for 'BOMData'
+The namespace 'CadAutomationPlugin.Core.Unfold' already contains a definition for 'UnfoldResult'
+```
+
+**原因**: 
+- `CoreStubs.cs` 定义了 `BOMData`, `BOMItem`, `UnfoldResult` 等类
+- 但 `BOMGenerator.cs` 和 `UnfoldEngine.cs` 也在它们的 `#else` 块中定义了这些类
+- 导致重复定义错误
+
+**解决方案**: 
+- 从 `CoreStubs.cs` 中移除 BOM 和 Unfold 的存根类
+- 这些类已经在各自的文件中定义（`#else` 块中）
+- `CoreStubs.cs` 现在只包含其他模块的存根：
+  - ChangePropagation
+  - Parametric
+  - SmartDimension
+
+**修复的文件**:
+- `src/Core/CoreStubs.cs` - 移除重复的 BOM 和 Unfold 类
+
+---
+
+#### 问题 2: Data 项目使用 Core.BOM 命名空间导致编译错误
 
 **错误**: 
 ```
