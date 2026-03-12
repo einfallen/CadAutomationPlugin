@@ -1,3 +1,4 @@
+#if !CLOUD_BUILD
 using OfficeOpenXml;
 using CadAutomationPlugin.Core.BOM;
 using Shared.Logging;
@@ -195,3 +196,10 @@ namespace CadAutomationPlugin.Data.Excel
         }
     }
 }
+#else
+// 云编译存根
+namespace CadAutomationPlugin.Data.Excel
+{
+    public class ExcelExporterStub { }
+}
+#endif
