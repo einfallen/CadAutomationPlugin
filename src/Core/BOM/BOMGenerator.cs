@@ -1,4 +1,5 @@
 using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.Runtime;
 using Shared.Logging;
 
 namespace CadAutomationPlugin.Core.BOM
@@ -14,27 +15,56 @@ namespace CadAutomationPlugin.Core.BOM
         /// <summary>
         /// 提取 BOM 数据
         /// </summary>
+        /// <param name="db">AutoCAD 数据库</param>
+        /// <param name="trans">当前事务</param>
+        /// <returns>BOM 数据</returns>
+        /// <exception cref="ArgumentNullException">当 db 或 trans 为 null 时</exception>
         public BOMData ExtractBOM(Database db, Transaction trans)
         {
+            if (db == null)
+            {
+                Logger.Error("ExtractBOM: db 为 null");
+                throw new ArgumentNullException(nameof(db));
+            }
+
+            if (trans == null)
+            {
+                Logger.Error("ExtractBOM: trans 为 null");
+                throw new ArgumentNullException(nameof(trans));
+            }
+
             Logger.Info("开始提取 BOM 数据");
 
             var bomData = new BOMData();
-            var blockTable = trans.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+
+            using var blockTable = trans.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+            if (blockTable == null)
+            {
+                Logger.Error("ExtractBOM: 无法获取块表");
+                return bomData;
+            }
 
             // 遍历所有块定义
             foreach (ObjectId blockId in blockTable)
             {
-                var block = trans.GetObject(blockId, OpenMode.ForRead) as BlockTableRecord;
-                if (block == null || block.IsLayout) continue;
-
-                // 跳过非装配块
-                if (!IsAssemblyBlock(block)) continue;
-
-                var item = ExtractBlockInfo(block, trans);
-                if (item != null)
+                try
                 {
-                    bomData.Items.Add(item);
-                    Logger.Debug($"提取零件：{item.PartNumber} - {item.Name}");
+                    using var block = trans.GetObject(blockId, OpenMode.ForRead) as BlockTableRecord;
+                    if (block == null || block.IsLayout) continue;
+
+                    // 跳过非装配块
+                    if (!IsAssemblyBlock(block)) continue;
+
+                    var item = ExtractBlockInfo(block, trans);
+                    if (item != null)
+                    {
+                        bomData.Items.Add(item);
+                        Logger.Debug($"提取零件：{item.PartNumber} - {item.Name}");
+                    }
+                }
+                catch (Autodesk.AutoCAD.Runtime.Exception ex)
+                {
+                    Logger.Error($"处理块时发生错误：{blockId.ObjectClass.DxfName}", ex);
                 }
             }
 
@@ -48,17 +78,41 @@ namespace CadAutomationPlugin.Core.BOM
         /// <summary>
         /// 提取带重量的 BOM 数据
         /// </summary>
+        /// <param name="db">AutoCAD 数据库</param>
+        /// <param name="trans">当前事务</param>
+        /// <returns>带重量的 BOM 数据</returns>
         public BOMData ExtractBOMWithWeight(Database db, Transaction trans)
         {
+            if (db == null)
+            {
+                Logger.Error("ExtractBOMWithWeight: db 为 null");
+                throw new ArgumentNullException(nameof(db));
+            }
+
+            if (trans == null)
+            {
+                Logger.Error("ExtractBOMWithWeight: trans 为 null");
+                throw new ArgumentNullException(nameof(trans));
+            }
+
             Logger.Info("开始提取 BOM 数据（含重量）");
 
             var bomData = ExtractBOM(db, trans);
 
             foreach (var item in bomData.Items)
             {
-                item.UnitWeight = CalculateWeight(item, db, trans);
-                item.TotalWeight = item.UnitWeight * item.Quantity;
-                Logger.Debug($"计算重量：{item.PartNumber} = {item.UnitWeight:F3} kg");
+                try
+                {
+                    item.UnitWeight = CalculateWeight(item, db, trans);
+                    item.TotalWeight = item.UnitWeight * item.Quantity;
+                    Logger.Debug($"计算重量：{item.PartNumber} = {item.UnitWeight:F3} kg");
+                }
+                catch (Autodesk.AutoCAD.Runtime.Exception ex)
+                {
+                    Logger.Error($"计算重量失败：{item.PartNumber}", ex);
+                    item.UnitWeight = 0;
+                    item.TotalWeight = 0;
+                }
             }
 
             return bomData;
@@ -69,6 +123,12 @@ namespace CadAutomationPlugin.Core.BOM
         /// </summary>
         private BOMItem? ExtractBlockInfo(BlockTableRecord block, Transaction trans)
         {
+            if (block == null || block.IsDisposed)
+            {
+                Logger.Warn("ExtractBlockInfo: 块对象无效");
+                return null;
+            }
+
             try
             {
                 var item = new BOMItem
@@ -82,9 +142,14 @@ namespace CadAutomationPlugin.Core.BOM
 
                 return item;
             }
-            catch (Exception ex)
+            catch (Autodesk.AutoCAD.Runtime.Exception ex)
             {
                 Logger.Error($"提取块信息失败：{block.Name}", ex);
+                return null;
+            }
+            catch (System.Exception ex)
+            {
+                Logger.Error($"提取块信息失败（未知错误）：{block.Name}", ex);
                 return null;
             }
         }
@@ -94,17 +159,30 @@ namespace CadAutomationPlugin.Core.BOM
         /// </summary>
         private string? GetBlockAttribute(BlockTableRecord block, string tagName, Transaction trans)
         {
-            foreach (ObjectId id in block)
+            if (block == null || block.IsDisposed)
             {
-                var entity = trans.GetObject(id, OpenMode.ForRead) as Entity;
-                if (entity is DBText text)
+                return null;
+            }
+
+            try
+            {
+                foreach (ObjectId id in block)
                 {
-                    if (text.Text.ToUpper().Contains(tagName))
+                    using var entity = trans.GetObject(id, OpenMode.ForRead) as Entity;
+                    if (entity is DBText text)
                     {
-                        return text.Text;
+                        if (text.Text.ToUpper().Contains(tagName))
+                        {
+                            return text.Text;
+                        }
                     }
                 }
             }
+            catch (Autodesk.AutoCAD.Runtime.Exception ex)
+            {
+                Logger.Error($"读取块属性失败：{tagName}", ex);
+            }
+
             return null;
         }
 
@@ -113,6 +191,11 @@ namespace CadAutomationPlugin.Core.BOM
         /// </summary>
         private bool IsAssemblyBlock(BlockTableRecord block)
         {
+            if (block == null || block.IsDisposed)
+            {
+                return false;
+            }
+
             // 排除系统块和布局
             if (block.Name.StartsWith("*") || block.IsLayout)
                 return false;
@@ -131,22 +214,46 @@ namespace CadAutomationPlugin.Core.BOM
         /// </summary>
         private void CalculateQuantities(BOMData bomData, Database db, Transaction trans)
         {
-            var blockTable = trans.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-            var modelSpace = trans.GetObject(blockTable[BlockTableRecord.ModelSpace], OpenMode.ForRead) as BlockTableRecord;
+            if (bomData == null || db == null || trans == null)
+            {
+                Logger.Warn("CalculateQuantities: 参数无效");
+                return;
+            }
+
+            using var blockTable = trans.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+            if (blockTable == null)
+            {
+                Logger.Error("CalculateQuantities: 无法获取块表");
+                return;
+            }
+
+            using var modelSpace = trans.GetObject(blockTable[BlockTableRecord.ModelSpace], OpenMode.ForRead) as BlockTableRecord;
+            if (modelSpace == null)
+            {
+                Logger.Error("CalculateQuantities: 无法获取模型空间");
+                return;
+            }
 
             // 统计模型空间中各块的引用次数
             var quantityDict = new Dictionary<string, int>();
 
             foreach (ObjectId id in modelSpace)
             {
-                var entity = trans.GetObject(id, OpenMode.ForRead) as Entity;
-                if (entity is BlockReference blockRef)
+                try
                 {
-                    var blockName = blockRef.BlockTableRecord.Name;
-                    if (quantityDict.ContainsKey(blockName))
-                        quantityDict[blockName]++;
-                    else
-                        quantityDict[blockName] = 1;
+                    using var entity = trans.GetObject(id, OpenMode.ForRead) as Entity;
+                    if (entity is BlockReference blockRef)
+                    {
+                        var blockName = blockRef.BlockTableRecord.Name;
+                        if (quantityDict.ContainsKey(blockName))
+                            quantityDict[blockName]++;
+                        else
+                            quantityDict[blockName] = 1;
+                    }
+                }
+                catch (Autodesk.AutoCAD.Runtime.Exception ex)
+                {
+                    Logger.Error($"统计块引用失败", ex);
                 }
             }
 
@@ -165,6 +272,12 @@ namespace CadAutomationPlugin.Core.BOM
         /// </summary>
         private double CalculateWeight(BOMItem item, Database db, Transaction trans)
         {
+            if (item == null || db == null || trans == null)
+            {
+                Logger.Warn("CalculateWeight: 参数无效");
+                return 0;
+            }
+
             try
             {
                 // 获取零件体积（需要 3D 实体）
@@ -178,9 +291,14 @@ namespace CadAutomationPlugin.Core.BOM
 
                 return Math.Round(weight, 3);
             }
-            catch (Exception ex)
+            catch (Autodesk.AutoCAD.Runtime.Exception ex)
             {
                 Logger.Error($"重量计算失败：{item.PartNumber}", ex);
+                return 0;
+            }
+            catch (System.Exception ex)
+            {
+                Logger.Error($"重量计算失败（未知错误）：{item.PartNumber}", ex);
                 return 0;
             }
         }
@@ -190,30 +308,42 @@ namespace CadAutomationPlugin.Core.BOM
         /// </summary>
         private double GetPartVolume(string partNumber, Database db, Transaction trans)
         {
-            // 遍历 3D 实体计算体积
-            var blockTable = trans.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-            
-            if (blockTable.Has(partNumber))
+            if (string.IsNullOrEmpty(partNumber) || db == null || trans == null)
             {
-                var block = trans.GetObject(blockTable[partNumber], OpenMode.ForRead) as BlockTableRecord;
-                if (block != null)
-                {
-                    double totalVolume = 0;
-
-                    foreach (ObjectId id in block)
-                    {
-                        var entity = trans.GetObject(id, OpenMode.ForRead) as Entity;
-                        if (entity is Solid3d solid)
-                        {
-                            totalVolume += solid.Volume;
-                        }
-                    }
-
-                    return totalVolume;
-                }
+                return 0;
             }
 
-            return 0;
+            using var blockTable = trans.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+            if (blockTable == null || !blockTable.Has(partNumber))
+            {
+                return 0;
+            }
+            
+            using var block = trans.GetObject(blockTable[partNumber], OpenMode.ForRead) as BlockTableRecord;
+            if (block == null || block.IsDisposed)
+            {
+                return 0;
+            }
+
+            double totalVolume = 0;
+
+            try
+            {
+                foreach (ObjectId id in block)
+                {
+                    using var entity = trans.GetObject(id, OpenMode.ForRead) as Entity;
+                    if (entity is Solid3d solid)
+                    {
+                        totalVolume += solid.Volume;
+                    }
+                }
+            }
+            catch (Autodesk.AutoCAD.Runtime.Exception ex)
+            {
+                Logger.Error($"计算体积失败：{partNumber}", ex);
+            }
+
+            return totalVolume;
         }
 
         /// <summary>
@@ -221,6 +351,11 @@ namespace CadAutomationPlugin.Core.BOM
         /// </summary>
         private double GetMaterialDensity(string material)
         {
+            if (string.IsNullOrEmpty(material))
+            {
+                return 7.85; // 默认钢密度
+            }
+
             var densityTable = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase)
             {
                 { "Q235", 7.85 },
@@ -230,7 +365,7 @@ namespace CadAutomationPlugin.Core.BOM
                 { "AL6061", 2.70 },
                 { "AL5052", 2.68 },
                 { "CU", 8.96 },
-                { " Brass", 8.50 },
+                { "Brass", 8.50 },
                 { "尼龙", 1.15 },
                 { "POM", 1.42 },
                 { "PTFE", 2.20 }

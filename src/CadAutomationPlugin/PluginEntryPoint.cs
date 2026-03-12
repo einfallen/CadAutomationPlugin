@@ -20,6 +20,9 @@ namespace CadAutomationPlugin
         private static readonly ILogger Logger = LogManager.GetLogger(nameof(PluginEntryPoint));
         private MainWindow? _mainWindow;
 
+        /// <summary>
+        /// 插件初始化 - AutoCAD 加载时调用
+        /// </summary>
         public void Initialize()
         {
             try
@@ -33,37 +36,72 @@ namespace CadAutomationPlugin
                 InitializeServices();
                 
                 Logger.Info("CAD 自动化插件初始化完成");
-                Application.DocumentManager.MdiActiveDocument?.Editor.WriteMessage("\n✓ CAD 自动化插件已加载 (输入 CADAUTO 启动)");
+                WriteToEditor("✓ CAD 自动化插件已加载 (输入 CADAUTO 启动)");
             }
-            catch (Exception ex)
+            catch (Autodesk.AutoCAD.Runtime.Exception ex)
             {
-                Logger.Error("插件初始化失败", ex);
-                Application.DocumentManager.MdiActiveDocument?.Editor.WriteMessage($"\n✗ 插件加载失败：{ex.Message}");
+                Logger.Error($"插件初始化失败 (AutoCAD 错误：{ex.ErrorStatus})", ex);
+                WriteToEditor($"✗ 插件加载失败：{ex.Message}");
+            }
+            catch (System.Exception ex)
+            {
+                Logger.Error("插件初始化失败 (未知错误)", ex);
+                WriteToEditor($"✗ 插件加载失败：{ex.Message}");
+                throw; // 重新抛出未知异常
             }
         }
 
+        /// <summary>
+        /// 插件终止 - AutoCAD 卸载时调用
+        /// </summary>
         public void Terminate()
         {
-            Logger.Info("插件正在终止...");
-            _mainWindow?.Close();
-            Logger.Info("插件已终止");
+            try
+            {
+                Logger.Info("插件正在终止...");
+                _mainWindow?.Close();
+                _mainWindow = null;
+                Logger.Info("插件已终止");
+            }
+            catch (System.Exception ex)
+            {
+                Logger.Error("插件终止时发生错误", ex);
+            }
         }
 
+        /// <summary>
+        /// 注册命令
+        /// </summary>
         private void RegisterCommands()
         {
             // 命令注册在 Commands 文件夹中通过 CommandMethod 特性完成
+            Logger.Debug("命令已注册");
         }
 
+        /// <summary>
+        /// 初始化核心服务
+        /// </summary>
         private void InitializeServices()
         {
-            // 初始化日志
-            LogManager.Initialize();
-            
-            // 初始化数据库连接
-            // Data.Database.DbInitializer.Initialize();
-            
-            // 加载配置
-            // ConfigManager.Load();
+            try
+            {
+                // 初始化日志
+                LogManager.Initialize();
+                Logger.Debug("日志系统已初始化");
+                
+                // 初始化数据库连接
+                // Data.Database.DbInitializer.Initialize();
+                
+                // 加载配置
+                // ConfigManager.Load();
+                
+                Logger.Debug("核心服务已初始化");
+            }
+            catch (System.Exception ex)
+            {
+                Logger.Error("初始化核心服务失败", ex);
+                throw;
+            }
         }
 
         /// <summary>
@@ -71,18 +109,45 @@ namespace CadAutomationPlugin
         /// </summary>
         public void ShowMainWindow()
         {
-            if (_mainWindow == null || !_mainWindow.IsVisible)
+            try
             {
-                _mainWindow = new MainWindow
+                if (_mainWindow == null || !_mainWindow.IsVisible)
                 {
-                    Owner = Application.Current.MainWindow,
-                    DataContext = new MainViewModel()
-                };
-                _mainWindow.Show();
+                    _mainWindow = new MainWindow
+                    {
+                        Owner = Application.Current.MainWindow,
+                        DataContext = new MainViewModel()
+                    };
+                    _mainWindow.Show();
+                    Logger.Info("主窗口已显示");
+                }
+                else
+                {
+                    _mainWindow.Activate();
+                    Logger.Info("主窗口已激活");
+                }
             }
-            else
+            catch (System.Exception ex)
             {
-                _mainWindow.Activate();
+                Logger.Error("显示主窗口失败", ex);
+                WriteToEditor($"✗ 无法显示主窗口：{ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 向 AutoCAD 编辑器写入消息（安全包装）
+        /// </summary>
+        private void WriteToEditor(string message)
+        {
+            try
+            {
+                var doc = Application.DocumentManager.MdiActiveDocument;
+                doc?.Editor.WriteMessage($"\n{message}");
+            }
+            catch (System.Exception ex)
+            {
+                Logger.Error("写入编辑器失败", ex);
+                // 静默失败，不影响主流程
             }
         }
     }
