@@ -11,9 +11,6 @@
     <PackageReference Include="System.Drawing.Common" Version="7.0.0" />
   </ItemGroup>
 
-  <!-- 云编译存根文件 - 本地编译时移除（云编译时保留） -->
-  <!-- .NET SDK 默认包含所有 .cs 文件，所以只需要 Remove -->
-  <ItemGroup Condition="'$(CloudBuild)' != 'true'">
-    <Compile Remove="CloudBuildStubs.cs" />
-  </ItemGroup>
+  <!-- 云编译存根文件 - 始终包含，通过 #if CLOUD_BUILD 控制内容 -->
+  <!-- 不在此处使用 Condition，让文件始终被 SDK 包含 -->
 </Project>
