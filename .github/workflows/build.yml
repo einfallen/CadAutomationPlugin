@@ -17,6 +17,7 @@ env:
   DOTNET_VERSION: '6.0.x'
   BUILD_CONFIGURATION: 'Release'
   CLOUD_BUILD: 'true'
+  GITHUB_ACTIONS: 'true'
 
 jobs:
   build-windows:
@@ -37,24 +38,13 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
         
-    - name: 准备云编译环境
-      shell: pwsh
-      run: |
-        Write-Host "=== 准备云编译环境 ==="
-        echo "CLOUD_BUILD=true" >> $env:GITHUB_ENV
-        
-        if (Test-Path "prepare-cloud-build.ps1") {
-          .\prepare-cloud-build.ps1 -SkipAutoCADRefs
-        }
-        
-        Write-Host "CLOUD_BUILD = $env:CLOUD_BUILD"
-        
     - name: 显示构建信息
       run: |
         echo "=== 构建环境 ==="
         dotnet --version
         echo "配置：${{ env.BUILD_CONFIGURATION }}"
-        echo "云编译：$env:CLOUD_BUILD"
+        echo "GITHUB_ACTIONS = $env:GITHUB_ACTIONS"
+        echo "CLOUD_BUILD = $env:CLOUD_BUILD"
         
     - name: 还原依赖
       run: dotnet restore --verbosity normal
