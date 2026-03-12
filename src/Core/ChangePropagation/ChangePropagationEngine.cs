@@ -1,3 +1,4 @@
+#if !CLOUD_BUILD
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Runtime;
 using Shared.Logging;
@@ -538,3 +539,4 @@ namespace CadAutomationPlugin.Core.ChangePropagation
         public Dictionary<string, double>? DimensionUpdates { get; set; }
     }
 }
+#endif

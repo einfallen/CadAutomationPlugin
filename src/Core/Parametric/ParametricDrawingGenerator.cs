@@ -1,3 +1,4 @@
+#if !CLOUD_BUILD
 using Autodesk.AutoCAD.DatabaseServices;
 using Shared.Logging;
 
@@ -221,3 +222,4 @@ namespace CadAutomationPlugin.Core.Parametric
         public string TemplateUsed { get; set; } = "";
     }
 }
+#endif

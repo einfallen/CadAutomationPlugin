@@ -1,3 +1,4 @@
+#if !CLOUD_BUILD
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Runtime;
 using Shared.Logging;
@@ -403,3 +404,33 @@ namespace CadAutomationPlugin.Core.BOM
         public string Remarks { get; set; } = "";
     }
 }
+#else
+// 云编译存根
+namespace CadAutomationPlugin.Core.BOM
+{
+    public class BOMGeneratorStub { }
+    
+    public class BOMData
+    {
+        public List<BOMItem> Items { get; set; } = new List<BOMItem>();
+        public string ProjectName { get; set; } = "";
+        public string DrawingNumber { get; set; } = "";
+        public System.DateTime GeneratedAt { get; set; } = System.DateTime.Now;
+        public string GeneratedBy { get; set; } = "";
+    }
+
+    public class BOMItem
+    {
+        public int Index { get; set; }
+        public string PartNumber { get; set; } = "";
+        public string Name { get; set; } = "";
+        public int Quantity { get; set; } = 1;
+        public string Material { get; set; } = "";
+        public double UnitWeight { get; set; }
+        public double TotalWeight { get; set; }
+        public string Vendor { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Remarks { get; set; } = "";
+    }
+}
+#endif
