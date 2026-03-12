@@ -1,8 +1,6 @@
 // 云编译存根 - 提供 AutoCAD 命名空间的空定义
 // 仅在 CLOUD_BUILD 模式下编译
 
-#if CLOUD_BUILD
-
 namespace Autodesk.AutoCAD.DatabaseServices
 {
     // 空存根类 - 仅用于云编译通过
@@ -118,5 +116,3 @@ namespace Autodesk.AutoCAD.PlottingServices
 {
     public class PlotEngine { }
 }
-
-#endif

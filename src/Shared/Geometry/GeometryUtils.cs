@@ -13,7 +13,7 @@ namespace Shared.Geometry
     /// <summary>
     /// 几何工具类（云编译存根）
     /// </summary>
-    public static class GeometryUtilsStub
+    public static class GeometryUtils
 #endif
     {
 #if !CLOUD_BUILD
