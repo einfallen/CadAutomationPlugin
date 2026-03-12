@@ -48,9 +48,22 @@ jobs:
     - name: 编译
       run: dotnet build --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore --verbosity normal
       
+    - name: 代码质量检查
+      run: |
+        echo "=== 运行代码分析器 ==="
+        dotnet build /p:RunAnalyzersDuringBuild=true --verbosity normal
+      continue-on-error: true
+      
     - name: 运行测试
       run: dotnet test --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --verbosity normal
       continue-on-error: true  # 测试失败不阻塞构建
+      
+    - name: 上传代码分析结果
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: results.sarif
+      continue-on-error: true
       
     - name: 发布
       run: dotnet publish --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --output ./publish
