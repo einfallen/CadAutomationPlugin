@@ -135,7 +135,29 @@ Please update all occurrences of the CodeQL Action in your workflow files to v4.
 
 ### 2026-03-12 最新修复
 
-#### 问题 1: CoreStubs.cs 被 #if 包裹导致内容为空
+#### 问题 1: Directory.Build.props CloudBuild 属性检测时机错误
+
+**错误**: 
+```
+The type or namespace name 'BOMData' could not be found
+```
+
+**原因**: 
+- `build.yml` 中 `CLOUD_BUILD=true` 在 "准备云编译环境" 步骤才设置
+- 但 `dotnet restore` 在这之前已经运行
+- `Directory.Build.props` 中的 `CloudBuild` 属性检测在 restore 时还没有生效
+
+**解决方案**: 
+- 在 workflow 级别的 `env` 块中设置 `GITHUB_ACTIONS=true` 和 `CLOUD_BUILD=true`
+- 这样环境变量从 job 开始就可用
+- `Directory.Build.props` 可以在 restore 时正确检测云编译模式
+
+**修复的文件**:
+- `.github/workflows/build.yml` - 在 workflow 级别设置环境变量
+
+---
+
+#### 问题 2: CoreStubs.cs 被 #if 包裹导致内容为空
 
 **错误**: 
 ```
