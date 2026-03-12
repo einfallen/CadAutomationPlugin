@@ -9,7 +9,6 @@ namespace Shared.Logging
     /// </summary>
     public static class LogManager
     {
-        private static NLog.LogManager? _logManager;
         private static string _logPath = "";
 
         /// <summary>
@@ -17,6 +16,7 @@ namespace Shared.Logging
         /// </summary>
         public static void Initialize()
         {
+#if !CLOUD_BUILD
             var config = new LoggingConfiguration();
 
             // 设置日志路径
@@ -51,6 +51,7 @@ namespace Shared.Logging
             config.AddRule(LogLevel.Info, LogLevel.Fatal, consoleTarget);
 
             NLog.LogManager.Configuration = config;
+#endif
         }
 
         /// <summary>
@@ -58,7 +59,11 @@ namespace Shared.Logging
         /// </summary>
         public static ILogger GetLogger(string name)
         {
+#if CLOUD_BUILD
+            return new ConsoleLogger(name);
+#else
             return new NLogLogger(NLog.LogManager.GetLogger(name));
+#endif
         }
 
         /// <summary>
@@ -79,14 +84,15 @@ namespace Shared.Logging
         void Info(string message);
         void Warn(string message);
         void Error(string message);
-        void Error(string message, Exception ex);
+        void Error(string message, System.Exception ex);
         void Fatal(string message);
-        void Fatal(string message, Exception ex);
+        void Fatal(string message, System.Exception ex);
     }
 
     /// <summary>
     /// NLog 适配器
     /// </summary>
+#if !CLOUD_BUILD
     public class NLogLogger : ILogger
     {
         private readonly NLog.Logger _logger;
@@ -100,8 +106,30 @@ namespace Shared.Logging
         public void Info(string message) => _logger.Info(message);
         public void Warn(string message) => _logger.Warn(message);
         public void Error(string message) => _logger.Error(message);
-        public void Error(string message, Exception ex) => _logger.Error(ex, message);
+        public void Error(string message, System.Exception ex) => _logger.Error(ex, message);
         public void Fatal(string message) => _logger.Fatal(message);
-        public void Fatal(string message, Exception ex) => _logger.Fatal(ex, message);
+        public void Fatal(string message, System.Exception ex) => _logger.Fatal(ex, message);
+    }
+#endif
+
+    /// <summary>
+    /// 控制台日志适配器（云编译用）
+    /// </summary>
+    public class ConsoleLogger : ILogger
+    {
+        private readonly string _name;
+
+        public ConsoleLogger(string name)
+        {
+            _name = name;
+        }
+
+        public void Debug(string message) => System.Diagnostics.Debug.WriteLine($"[{_name}] DEBUG: {message}");
+        public void Info(string message) => System.Console.WriteLine($"[{_name}] INFO: {message}");
+        public void Warn(string message) => System.Console.WriteLine($"[{_name}] WARN: {message}");
+        public void Error(string message) => System.Console.WriteLine($"[{_name}] ERROR: {message}");
+        public void Error(string message, System.Exception ex) => System.Console.WriteLine($"[{_name}] ERROR: {message} - {ex.Message}");
+        public void Fatal(string message) => System.Console.WriteLine($"[{_name}] FATAL: {message}");
+        public void Fatal(string message, System.Exception ex) => System.Console.WriteLine($"[{_name}] FATAL: {message} - {ex.Message}");
     }
 }

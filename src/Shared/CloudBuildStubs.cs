@@ -19,6 +19,19 @@ namespace Autodesk.AutoCAD.DatabaseServices
     public class ResultBuffer { }
     public class TypedValue { }
     public enum DxfCode { ExtendedDataRegAppName, ExtendedDataAsciiString, ExtendedDataReal }
+    public class RotatedDimension : Entity { }
+    public class DiametricDimension : Entity { }
+    public class RadialDimension : Entity { }
+    public class Dimension : Entity { }
+    public class Line : Entity { }
+    public class Circle : Entity { }
+    public class Arc : Entity { }
+    public class Polyline : Entity { }
+    public class Solid3d : Entity { }
+    public class DBText : Entity { }
+    public class DBObject { }
+    public class BlockReference : Entity { }
+    public enum SegmentType { Line, Arc }
 }
 
 namespace Autodesk.AutoCAD.Runtime
@@ -45,7 +58,6 @@ namespace Autodesk.AutoCAD.ApplicationServices
     public class Application
     {
         public static DocumentManager DocumentManager { get; } = new DocumentManager();
-        public static System.Windows.Window Current { get; } = new System.Windows.Window();
     }
     
     public class DocumentManager
@@ -75,12 +87,36 @@ namespace Autodesk.AutoCAD.Geometry
     {
         public static Point3d Origin => new Point3d();
         public Point3d(double x, double y, double z) { }
+        public Point3d GetVectorTo(Point3d other) => new Point3d();
     }
     
     public struct Vector3d
     {
         public Vector3d(double x, double y, double z) { }
+        public static Vector3d Zero => new Vector3d();
     }
+    
+    public struct Point2d
+    {
+        public static Point2d Origin => new Point2d();
+        public Point2d(double x, double y) { }
+    }
+    
+    public struct Vector2d
+    {
+        public Vector2d(double x, double y) { }
+        public static Vector2d Zero => new Vector2d();
+    }
+}
+
+namespace Autodesk.AutoCAD.GraphicsInterface
+{
+    public class Viewport { }
+}
+
+namespace Autodesk.AutoCAD.PlottingServices
+{
+    public class PlotEngine { }
 }
 
 #endif
