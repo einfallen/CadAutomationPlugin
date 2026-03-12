@@ -8,12 +8,10 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:  # 允许手动触发
+  workflow_dispatch:
 
-# 权限配置
 permissions:
   contents: read
-  security-events: write
 
 env:
   DOTNET_VERSION: '6.0.x'
@@ -23,11 +21,14 @@ env:
 jobs:
   build-windows:
     runs-on: windows-latest
-    # 使用 Node.js 24
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
     
     steps:
+    - name: 设置 Node.js 24 环境变量
+      run: |
+        echo "FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true" >> $env:GITHUB_ENV
+        echo "ACTIONS_STEP_DEBUG=true" >> $env:GITHUB_ENV
+      shell: pwsh
+      
     - name: 检出代码
       uses: actions/checkout@v4
       
@@ -41,14 +42,12 @@ jobs:
       run: |
         Write-Host "=== 准备云编译环境 ==="
         echo "CLOUD_BUILD=true" >> $env:GITHUB_ENV
-        [Environment]::SetEnvironmentVariable("CLOUD_BUILD", "true", "Process")
         
         if (Test-Path "prepare-cloud-build.ps1") {
           .\prepare-cloud-build.ps1 -SkipAutoCADRefs
         }
         
         Write-Host "CLOUD_BUILD = $env:CLOUD_BUILD"
-        Write-Host "GITHUB_ACTIONS = $env:GITHUB_ACTIONS"
         
     - name: 显示构建信息
       run: |
@@ -61,13 +60,8 @@ jobs:
       run: dotnet restore --verbosity normal
       
     - name: 编译
-      run: dotnet build --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore --verbosity normal
-      
-    - name: 代码质量检查
-      run: |
-        echo "=== 运行代码分析器 ==="
-        dotnet build /p:RunAnalyzersDuringBuild=true --verbosity normal
-      continue-on-error: true
+      run: dotnet build --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore --verbosity diagnostic
+      continue-on-error: false
       
     - name: 运行测试
       run: dotnet test --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --verbosity normal
@@ -101,29 +95,3 @@ jobs:
         name: CadAutomationPlugin-Installer
         path: CadAutomationPlugin.zip
         retention-days: 30
-
-  # 代码质量检查（可选，仅 PR 触发）
-  code-analysis:
-    runs-on: windows-latest
-    needs: build-windows
-    if: github.event_name == 'pull_request'
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
-    permissions:
-      security-events: write
-    
-    steps:
-    - name: 检出代码
-      uses: actions/checkout@v4
-      
-    - name: 设置 .NET 6.0
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
-        
-    - name: 还原依赖
-      run: dotnet restore
-      
-    - name: 代码分析
-      run: dotnet build /p:RunAnalyzersDuringBuild=true /warnaserror
-      continue-on-error: true

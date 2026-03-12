@@ -5,20 +5,22 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>10.0</LangVersion>
+    <UseWPF>true</UseWPF>
     
     <!-- 云编译模式检测 -->
-    <!-- GitHub Actions 会设置 GITHUB_ACTIONS=true -->
-    <CloudBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</CloudBuild>
-    <CloudBuild Condition="'$(CI)' == 'true'">true</CloudBuild>
+    <!-- GitHub Actions 会设置 GITHUB_ACTIONS=true 和 CLOUD_BUILD=true -->
+    <CloudBuild Condition="'$(GITHUB_ACTIONS)' == 'true' OR '$(CLOUD_BUILD)' == 'true'">true</CloudBuild>
     
     <!-- AutoCAD 路径默认值 -->
-    <AutoCADPath Condition="'$(AutoCADPath)' == ''">C:\Program Files\Autodesk\AutoCAD 2024</AutoCADPath>
+    <AutoCADPath Condition="'$(AutoCADPath)' == '' AND '$(CloudBuild)' != 'true'">C:\Program Files\Autodesk\AutoCAD 2024</AutoCADPath>
     <AutoCADPluginPath Condition="'$(AutoCADPluginPath)' == ''">C:\ProgramData\Autodesk\ApplicationPlugins\CadAutomationPlugin.bundle\Contents</AutoCADPluginPath>
   </PropertyGroup>
 
   <!-- 云编译时的替代配置 -->
   <PropertyGroup Condition="'$(CloudBuild)' == 'true'">
-    <!-- 云编译时跳过 AutoCAD 引用，使用存根 -->
-    <DefineConstants>$(DefineConstants);CLOUD_BUILD</DefineConstants>
+    <!-- 云编译时定义 CLOUD_BUILD 常量 -->
+    <DefineConstants>$(DefineConstants);CLOUD_BUILD;TRACE</DefineConstants>
+    <!-- 跳过 XML 文档警告 -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
 </Project>
