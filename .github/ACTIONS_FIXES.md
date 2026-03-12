@@ -135,7 +135,43 @@ Please update all occurrences of the CodeQL Action in your workflow files to v4.
 
 ### 2026-03-12 最新修复
 
-#### 问题：云编译找不到 AutoCAD 命名空间
+#### 问题 1: MSB4232 - ItemGroup 嵌套错误
+
+**错误**: 
+```
+error MSB4232: Items that are outside Target elements must have one of the following operations: Include, Update, or Remove.
+```
+
+**原因**: `.csproj` 文件中 `<ItemGroup>` 嵌套在另一个 `<ItemGroup>` 内部，这是无效的 MSBuild 语法
+
+**错误配置**:
+```xml
+<!-- ❌ 无效 -->
+<ItemGroup>
+  <ItemGroup Condition="'$(CloudBuild)' != 'true'">
+    <Reference Include="AcMgd" />
+  </ItemGroup>
+</ItemGroup>
+```
+
+**解决方案**: 将 `Condition` 移到外层 `<ItemGroup>`
+
+**正确配置**:
+```xml
+<!-- ✅ 有效 -->
+<ItemGroup Condition="'$(CloudBuild)' != 'true'">
+  <Reference Include="AcMgd" />
+</ItemGroup>
+```
+
+**修复的文件**:
+- `src/CadAutomationPlugin/CadAutomationPlugin.csproj`
+- `src/Core/Core.csproj`
+- `src/UI/UI.csproj`
+
+---
+
+#### 问题 2: 云编译找不到 AutoCAD 命名空间
 
 **错误**: `The type or namespace name 'Autodesk' could not be found`
 
