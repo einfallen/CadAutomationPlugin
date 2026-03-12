@@ -47,18 +47,18 @@ jobs:
         echo "CLOUD_BUILD = $env:CLOUD_BUILD"
         
     - name: 还原依赖
-      run: dotnet restore --verbosity normal
+      run: dotnet restore --verbosity normal -p:CloudBuild=true
       
     - name: 编译
-      run: dotnet build --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore --verbosity diagnostic
+      run: dotnet build --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore --verbosity diagnostic -p:CloudBuild=true
       continue-on-error: false
       
     - name: 运行测试
-      run: dotnet test --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --verbosity normal
+      run: dotnet test --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --verbosity normal -p:CloudBuild=true
       continue-on-error: true
       
     - name: 发布
-      run: dotnet publish --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --output ./publish
+      run: dotnet publish --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --output ./publish -p:CloudBuild=true
       
     - name: 查看发布内容
       shell: pwsh
