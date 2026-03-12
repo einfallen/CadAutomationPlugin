@@ -1,5 +1,7 @@
 // Core 项目云编译存根 - 提供公共类的空定义
-// 文件通过 Core.csproj 条件包含/移除控制
+// 仅在 CLOUD_BUILD 模式下编译
+
+#if CLOUD_BUILD
 
 namespace CadAutomationPlugin.Core.BOM
 {
@@ -80,3 +82,5 @@ namespace CadAutomationPlugin.Core.Unfold
         public double FlatLength => Radius * Angle * Math.PI / 180.0; 
     }
 }
+
+#endif

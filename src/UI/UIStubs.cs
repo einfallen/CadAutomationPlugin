@@ -1,5 +1,7 @@
 // UI 项目云编译存根 - 提供 ViewModels 的空定义
-// 文件通过 UI.csproj 条件包含/移除控制
+// 仅在 CLOUD_BUILD 模式下编译
+
+#if CLOUD_BUILD
 
 namespace CadAutomationPlugin.UI.ViewModels
 {
@@ -10,3 +12,5 @@ namespace CadAutomationPlugin.UI.Views
 {
     public class MainWindowStub { }
 }
+
+#endif

@@ -31,9 +31,4 @@
     <PackageReference Include="EPPlus" Version="6.2.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
-
-  <!-- 云编译存根文件 - 本地编译时移除 -->
-  <ItemGroup Condition="'$(CloudBuild)' != 'true'">
-    <Compile Remove="CoreStubs.cs" />
-  </ItemGroup>
 </Project>
